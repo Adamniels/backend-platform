@@ -1,0 +1,45 @@
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# IDE/editor
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+TestResults/
+**/TestResults/
+coverage/
+*.trx
+
+# Logs
+*.log
+logs/
+
+# Local environment files / secrets
+.env
+.env.*
+!.env.example
+secrets.json
+
+# Local databases (legacy/dev)
+*.db
+*.db-shm
+*.db-wal
+
+# Docker local overrides
+docker-compose.override.yml
+
+# Dotnet tooling cache
+.dotnet/
