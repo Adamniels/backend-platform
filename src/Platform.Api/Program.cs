@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,9 +23,15 @@ builder.Services.AddOptions<PlatformAccessOptions>()
 
 builder.Services.AddSingleton<PlatformAccessSessionService>();
 
-builder.Services.AddDataProtection();
-// Optional: persist Data Protection key ring across restarts by setting Platform:DataProtectionKeysPath
-// and configuring PersistKeysToFileSystem (requires key ring package aligned with your SDK).
+var dataProtectionKeysPath = builder.Configuration["Platform:DataProtectionKeysPath"];
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName("Platform");
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    var keysDirectory = new DirectoryInfo(dataProtectionKeysPath);
+    keysDirectory.Create();
+    dataProtection.PersistKeysToFileSystem(keysDirectory);
+}
 
 builder.Services.AddProblemDetails();
 builder.Services.AddRateLimiter(o => o.AddUnlockRateLimiter());

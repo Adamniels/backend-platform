@@ -14,6 +14,18 @@ The **platform access gate** is the intended product model for protecting most H
 | Key validation | [AccessKeyValidationService](../src/Platform.Infrastructure/Access/AccessKeyValidationService.cs) | Outcome for unlock; **no** raw key logging |
 | Unlock use case | [UnlockSessionCommandHandler](../src/Platform.Application/Features/Access/UnlockSession/UnlockSessionCommandHandler.cs) + [AdminAccessRoutes](../src/Platform.Api/Features/Access/AdminAccessRoutes.cs) | Handler returns outcome; route issues cookie and maps to HTTP |
 
+## Data Protection (cookie crypto)
+
+[PlatformAccessSessionService](../src/Platform.Api/Access/PlatformAccessSessionService.cs) uses ASP.NET **Data Protection** (`IDataProtectionProvider`) to protect the session payload in the cookie (encrypt/sign). That requires a **key ring** managed by the host.
+
+**What was wrong before:** `Platform:DataProtectionKeysPath` existed on [PlatformAccessOptions](../src/Platform.Application/Configuration/PlatformAccessOptions.cs) but nothing called `PersistKeysToFileSystem`, so the key ring was **ephemeral** (in-memory in typical Linux/container deployments). After a **process restart** or new container instance, keys rotated and **existing session cookies no longer validated** (users had to unlock again). That is bad for production uptime expectations.
+
+**What the code does now:** [Program.cs](../src/Platform.Api/Program.cs) sets `SetApplicationName("Platform")` for a stable name across instances, and when **`Platform:DataProtectionKeysPath` is set to a non-empty path**, it **creates the directory if needed** and **persists the key ring to disk** there. In production, mount a **writable volume** at that path; for **multiple API replicas**, use **shared** storage (e.g. network volume) for that directory so all instances read the same keys.
+
+If `DataProtectionKeysPath` is **omitted** (e.g. local dev), the default in-memory (or process-local) key store still applies: restarts can invalidate sessions—acceptable for development.
+
+**Not implemented here:** Redis or database key storage (`PersistKeysTo*` other than file system); add only if you need that operational model.
+
 ## Middleware bypass (no session)
 
 - `OPTIONS` always allowed
