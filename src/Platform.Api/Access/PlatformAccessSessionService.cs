@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
-using Platform.Api.Configuration;
+using Platform.Application.Configuration;
 
 namespace Platform.Api.Access;
 

@@ -1,15 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Platform.Application.Abstractions.Access;
+using Platform.Application.Abstractions.Dashboard;
+using Platform.Application.Abstractions.HumanInput;
+using Platform.Application.Abstractions.Memory;
+using Platform.Application.Abstractions.News;
+using Platform.Application.Abstractions.Profile;
+using Platform.Application.Abstractions.SavedItems;
+using Platform.Application.Abstractions.SideLearning;
+using Platform.Application.Abstractions.Stats;
 using Platform.Application.Abstractions.Workflows;
-using Platform.Application.Features.Dashboard;
-using Platform.Application.Features.HumanInput;
-using Platform.Application.Features.Memory;
-using Platform.Application.Features.News;
-using Platform.Application.Features.Profile;
-using Platform.Application.Features.SavedItems;
-using Platform.Application.Features.SideLearning;
-using Platform.Application.Features.WorkflowRuns;
+using Platform.Application.Abstractions.WorkflowRuns;
+using Platform.Infrastructure.Access;
+using Platform.Infrastructure.Configuration;
 using Platform.Infrastructure.Features.Dashboard;
 using Platform.Infrastructure.Features.HumanInput;
 using Platform.Infrastructure.Features.Memory;
@@ -33,16 +37,17 @@ public static class DependencyInjection
         services.AddDbContext<PlatformDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<IDashboardQueries, DashboardQueries>();
-        services.AddScoped<IStatsQueries, StatsQueries>();
-        services.AddScoped<IWorkflowRunQueries, WorkflowRunQueries>();
-        services.AddScoped<IWorkflowRunCommands, WorkflowRunCommands>();
-        services.AddScoped<IProfileQueries, ProfileQueries>();
-        services.AddScoped<INewsQueries, NewsQueries>();
-        services.AddScoped<ISideLearningQueries, SideLearningQueries>();
-        services.AddScoped<ISavedItemQueries, SavedItemQueries>();
-        services.AddScoped<IMemoryQueries, MemoryQueries>();
-        services.AddScoped<IHumanInputQueries, HumanInputQueries>();
+        services.AddSingleton<IWorkflowStartOptions, WorkflowStartOptions>();
+        services.AddScoped<IAccessKeyValidationService, AccessKeyValidationService>();
+        services.AddScoped<IDashboardReadModelSource, DashboardReadModelSource>();
+        services.AddScoped<IStatsReadModelSource, StatsReadModelSource>();
+        services.AddScoped<IWorkflowRunRepository, WorkflowRunRepository>();
+        services.AddScoped<IProfileReadRepository, ProfileReadRepository>();
+        services.AddScoped<INewsReadRepository, NewsReadRepository>();
+        services.AddScoped<ISideLearningReadRepository, SideLearningReadRepository>();
+        services.AddScoped<ISavedItemsReadRepository, SavedItemsReadRepository>();
+        services.AddScoped<IMemoryReadRepository, MemoryReadRepository>();
+        services.AddScoped<IHumanInputReadRepository, HumanInputReadRepository>();
 
         var temporalAddress = configuration["Temporal:Address"];
         if (string.IsNullOrWhiteSpace(temporalAddress))

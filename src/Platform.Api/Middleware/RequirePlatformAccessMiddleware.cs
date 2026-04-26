@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Platform.Api.Access;
-using Platform.Api.Configuration;
+using Platform.Application.Configuration;
 
 namespace Platform.Api.Middleware;
 

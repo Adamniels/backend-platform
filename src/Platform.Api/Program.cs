@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Platform.Api.Access;
-using Platform.Api.Configuration;
-using Platform.Api.Endpoints;
+using Platform.Application.Configuration;
+using Platform.Api.Features;
+using Platform.Api.Features.Access;
 using Platform.Api.Middleware;
+using Platform.Application;
 using Platform.Infrastructure;
 using Platform.Infrastructure.Persistence;
 
@@ -58,6 +60,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddPlatformApplication();
 builder.Services.AddPlatformInfrastructure(builder.Configuration);
 
 var app = builder.Build();
