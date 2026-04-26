@@ -134,6 +134,26 @@ public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewS
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<bool> HasPendingWithEvidenceSubstringAsync(
+        int userId,
+        string evidenceSubstring,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(evidenceSubstring))
+        {
+            return false;
+        }
+
+        var texts = await db.MemoryReviewQueueItems
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.Status == MemoryReviewStatus.Pending)
+            .Select(x => x.EvidenceJson)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return texts.Any(
+            t => t is not null && t.Contains(evidenceSubstring, StringComparison.Ordinal));
+    }
+
     private async Task<long> UpsertSemanticFromNewSemanticProposalAsync(
         int userId,
         NewSemanticMemoryProposalV1 payload,

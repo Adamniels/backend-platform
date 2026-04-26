@@ -1,14 +1,18 @@
 using Microsoft.Extensions.DependencyInjection;
+using Platform.Application.Abstractions.Memory.Consolidation;
 using Platform.Application.Abstractions.Memory.Context;
 using Platform.Application.Abstractions.Memory.Events;
+using Platform.Application.Abstractions.Memory.Evidence;
 using Platform.Application.Abstractions.Memory.Items;
 using Platform.Application.Abstractions.Memory.Legacy;
 using Platform.Application.Abstractions.Memory.Profile;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Infrastructure.Features.Memory.Consolidation;
 using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Events;
+using Platform.Infrastructure.Features.Memory.Evidence;
 using Platform.Infrastructure.Features.Memory.Legacy;
 using Platform.Infrastructure.Features.Memory.Profile;
 using Platform.Infrastructure.Features.Memory.Review;
@@ -24,6 +28,10 @@ public static class MemoryInfrastructureServiceCollectionExtensions
         services
             .AddScoped<ILegacyMemoryInsightsReadRepository, LegacyMemoryInsightsReadRepository>()
             .AddScoped<IMemoryEventWriter, EfMemoryEventWriter>()
+            .AddScoped<IMemoryEventsReadRepository, EfMemoryEventsReadRepository>()
+            .AddScoped<IMemoryEvidenceReadRepository, EfMemoryEvidenceReadRepository>()
+            .AddScoped<IMemoryConsolidationRunRepository, EfMemoryConsolidationRunRepository>()
+            .AddSingleton<IMemoryConsolidationPolicyProvider, DefaultMemoryConsolidationPolicyProvider>()
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, EfSemanticMemoryReadRepository>()
             .AddScoped<IProceduralRuleReadRepository, ProceduralRuleReadRepositoryStub>()

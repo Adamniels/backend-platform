@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,7 @@ using Platform.Api.Access;
 using Platform.Application.Configuration;
 using Platform.Api.Features;
 using Platform.Api.Features.Access;
+using Platform.Api.Features.Memory.Internal;
 using Platform.Api.Middleware;
 using Platform.Application;
 using Platform.Infrastructure;
@@ -24,6 +26,9 @@ builder.Services.AddOptions<PlatformAccessOptions>()
     .ValidateOnStart();
 
 builder.Services.AddSingleton<PlatformAccessSessionService>();
+
+builder.Services.AddOptions<MemoryWorkerOptions>()
+    .Bind(builder.Configuration.GetSection(MemoryWorkerOptions.SectionName));
 
 var dataProtectionKeysPath = builder.Configuration["Platform:DataProtectionKeysPath"];
 var dataProtection = builder.Services.AddDataProtection()
@@ -102,6 +107,18 @@ app.UseExceptionHandler(errorApp =>
             logger.LogError(feature.Error, "Unhandled exception");
         }
 
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        if (env.IsEnvironment("Testing") && feature?.Error is Exception testingEx)
+        {
+            await Results.Problem(
+                    title: "Unhandled exception (testing)",
+                    detail: testingEx.ToString(),
+                    statusCode: StatusCodes.Status500InternalServerError)
+                .ExecuteAsync(context)
+                .ConfigureAwait(false);
+            return;
+        }
+
         await Results.Problem("An unexpected error occurred.").ExecuteAsync(context).ConfigureAwait(false);
     });
 });
@@ -118,6 +135,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 }
 app.UseCors("platform");
 app.UseRateLimiter();
+app.UseMiddleware<InternalMemoryWorkerAuthenticationMiddleware>();
 app.UseMiddleware<RequirePlatformAccessMiddleware>();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
@@ -132,6 +150,7 @@ app.MapGet(
 
 app.MapAdminEndpoints();
 app.MapV1Endpoints();
+InternalMemoryV1Routes.Map(app);
 
 app.Run();
 

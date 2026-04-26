@@ -18,6 +18,7 @@ using Platform.Application.Features.Memory.Semantic.FindSimilarSemanticMemories;
 using Platform.Application.Features.Memory.Semantic.GetSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.ListSemanticMemories;
 using Platform.Application.Features.Memory.Semantic.RejectSemanticMemory;
+using Platform.Application.Features.Memory.Consolidation.Nightly;
 using Platform.Application.Features.Memory.Semantic.UpdateSemanticMemoryConfidence;
 
 namespace Platform.Application.Features.Memory.DependencyInjection;
@@ -45,5 +46,6 @@ public static class MemoryApplicationServiceCollectionExtensions
             .AddScoped<RejectSemanticMemoryCommandHandler>()
             .AddScoped<ListSemanticMemoriesQueryHandler>()
             .AddScoped<GetSemanticMemoryQueryHandler>()
-            .AddScoped<FindSimilarSemanticMemoriesQueryHandler>();
+            .AddScoped<FindSimilarSemanticMemoriesQueryHandler>()
+            .AddScoped<ExecuteNightlyMemoryConsolidationCommandHandler>();
 }

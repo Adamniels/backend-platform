@@ -163,6 +163,23 @@ public static class MemoryV1EfConfiguration
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_memory_review_queue_created_at");
         });
 
+        modelBuilder.Entity<MemoryConsolidationRun>(e =>
+        {
+            e.ToTable("memory_consolidation_runs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.IdempotencyKey).HasMaxLength(256);
+            e.Property(x => x.Error).HasMaxLength(8000);
+            e.HasIndex(x => x.IdempotencyKey)
+                .IsUnique()
+                .HasDatabaseName("ix_memory_consolidation_runs_idempotency_key");
+            e.HasIndex(x => new { x.UserId, x.StartedAt })
+                .HasDatabaseName("ix_memory_consolidation_runs_user_started");
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<MemoryRelationship>(e =>
         {
             e.ToTable("memory_relationships");

@@ -69,3 +69,11 @@ public enum SemanticMemoryStatus
     PendingReview = 4,
     Rejected = 5,
 }
+
+public enum MemoryConsolidationRunStatus
+{
+    Unknown = 0,
+    Running = 1,
+    Completed = 2,
+    Failed = 3,
+}

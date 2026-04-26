@@ -27,6 +27,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<MemoryEvidence> MemoryEvidences => Set<MemoryEvidence>();
     public DbSet<ProceduralRule> ProceduralRules => Set<ProceduralRule>();
     public DbSet<MemoryReviewQueueItem> MemoryReviewQueueItems => Set<MemoryReviewQueueItem>();
+    public DbSet<MemoryConsolidationRun> MemoryConsolidationRuns => Set<MemoryConsolidationRun>();
     public DbSet<MemoryRelationship> MemoryRelationships => Set<MemoryRelationship>();
     public DbSet<ExplicitUserProfile> ExplicitUserProfiles => Set<ExplicitUserProfile>();
     public DbSet<InputNeededItem> InputNeededItems => Set<InputNeededItem>();

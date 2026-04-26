@@ -37,4 +37,10 @@ public interface IMemoryReviewService
         string? summary,
         string? proposedChangeJson,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Used by consolidation idempotency: pending item with the same fingerprint in <c>EvidenceJson</c>.</summary>
+    Task<bool> HasPendingWithEvidenceSubstringAsync(
+        int userId,
+        string evidenceSubstring,
+        CancellationToken cancellationToken = default);
 }
