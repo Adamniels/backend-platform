@@ -36,6 +36,16 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
     {
         var row = await LoadMutableAsync(id, userId, cancellationToken).ConfigureAwait(false);
         await AssertEventOwnedByUserAsync(userId, eventId, cancellationToken).ConfigureAwait(false);
+        var duplicateLink = await db.MemoryEvidences
+            .AnyAsync(
+                x => x.SemanticMemoryId == id && x.EventId == eventId,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (duplicateLink)
+        {
+            return row;
+        }
+
         var at = DateTimeOffset.UtcNow;
         var ev = MemoryEvidence.Link(userId, id, eventId, strength, reason, at);
         db.MemoryEvidences.Add(ev);
@@ -96,50 +106,58 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         await using var tx = await db.Database
             .BeginTransactionAsync(cancellationToken)
             .ConfigureAwait(false);
-        var created = SemanticMemory.CreateInitial(
-            userId,
-            key,
-            claim,
-            confidence,
-            auth,
-            domain,
-            at,
-            initialStatus);
-        db.SemanticMemories.Add(created);
         try
         {
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-        {
-            throw new MemoryConflictException(
-                "A semantic memory with this key and domain already exists (active or pending review).");
-        }
+            var created = SemanticMemory.CreateInitial(
+                userId,
+                key,
+                claim,
+                confidence,
+                auth,
+                domain,
+                at,
+                initialStatus);
+            db.SemanticMemories.Add(created);
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+            {
+                throw new MemoryConflictException(
+                    "A semantic memory with this key and domain already exists (active or pending review).");
+            }
 
-        var link = MemoryEvidence.Link(
-            userId,
-            created.Id,
-            eventId,
-            evidenceStrength,
-            evidenceReason,
-            at);
-        db.MemoryEvidences.Add(link);
-        try
-        {
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-        {
-            throw new MemoryConflictException(
-                "Could not create evidence: duplicate or conflicting row.");
-        }
-        catch (DbUpdateException)
-        {
-            throw new MemoryDomainException("Could not link evidence to the new semantic memory.");
-        }
+            var link = MemoryEvidence.Link(
+                userId,
+                created.Id,
+                eventId,
+                evidenceStrength,
+                evidenceReason,
+                at);
+            db.MemoryEvidences.Add(link);
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+            {
+                throw new MemoryConflictException(
+                    "Could not create evidence: duplicate or conflicting row.");
+            }
+            catch (DbUpdateException)
+            {
+                throw new MemoryDomainException("Could not link evidence to the new semantic memory.");
+            }
 
-        await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
-        return created;
+            await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return created;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
 
     public async Task<SemanticMemory?> FindActiveOrPendingByKeyDomainAsync(

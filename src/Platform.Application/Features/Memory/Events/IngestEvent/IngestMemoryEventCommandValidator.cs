@@ -27,6 +27,9 @@ public sealed class IngestMemoryEventCommandValidator : AbstractValidator<Ingest
             .Must(id => id == 0 || id == MemoryUser.DefaultId)
             .WithMessage("UserId must be omitted, 0, or 1 in the current deployment.");
         RuleFor(x => x.PayloadJson)
+            .MaximumLength(MemoryEventPayloadLimits.MaxPayloadJsonChars)
+            .When(x => !string.IsNullOrEmpty(x.PayloadJson))
+            .WithMessage($"PayloadJson must be at most {MemoryEventPayloadLimits.MaxPayloadJsonChars} characters.")
             .Must(BeValidJsonWhenPresent)
             .WithMessage("PayloadJson must be valid JSON when provided.");
         RuleFor(x => x.OccurredAt)

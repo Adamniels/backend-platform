@@ -129,6 +129,15 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                     }
 
                     var evidenceEvent = list[0];
+                    if (policy.BlocksAutoReinforceForEventType(evidenceEvent.EventType))
+                    {
+                        logger.LogInformation(
+                            "Skip auto-reinforce for semantic {SemanticId}: event type {EventType} is blocked by consolidation policy.",
+                            semantic.Id,
+                            evidenceEvent.EventType);
+                        continue;
+                    }
+
                     var exists = await evidenceRead
                         .ExistsForSemanticAndEventAsync(
                             command.UserId,

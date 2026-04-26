@@ -87,6 +87,14 @@ public sealed class SemanticMemoryContextV1Dto
     public string Status { get; set; } = "";
     public DateTimeOffset UpdatedAt { get; set; }
     public double RankScore { get; set; }
+
+    /// <summary>Rows in <c>memory_evidence</c> linking this semantic to episodic events.</summary>
+    public int EvidenceLinkCount { get; set; }
+
+    /// <summary>Up to eight most recent supporting <c>memory_events</c> ids (by <c>OccurredAt</c> desc).</summary>
+    public IReadOnlyList<long> SupportingEventIds { get; set; } = Array.Empty<long>();
+
+    public DateTimeOffset? LastSupportedAt { get; set; }
 }
 
 public sealed class EpisodicExampleV1Dto

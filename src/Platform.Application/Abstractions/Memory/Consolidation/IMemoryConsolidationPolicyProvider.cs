@@ -17,4 +17,10 @@ public interface IMemoryConsolidationPolicyProvider
 
     /// <summary>Priority for consolidation-created review items (lower = less urgent unless product inverts).</summary>
     int ReviewQueuePriority { get; }
+
+    /// <summary>
+    /// When true, nightly consolidation must not auto-reinforce semantics from this <paramref name="eventType" /> (trust:
+    /// identity/profile-like signals go through review only).
+    /// </summary>
+    bool BlocksAutoReinforceForEventType(string eventType);
 }

@@ -122,6 +122,9 @@ public static class MemoryV1EfConfiguration
             e.HasIndex(x => x.SemanticMemoryId).HasDatabaseName("ix_memory_evidence_semantic_memory_id");
             e.HasIndex(x => x.EventId).HasDatabaseName("ix_memory_evidence_event_id");
             e.HasIndex(x => new { x.UserId, x.SemanticMemoryId }).HasDatabaseName("ix_memory_evidence_user_semantic");
+            e.HasIndex(x => new { x.SemanticMemoryId, x.EventId })
+                .IsUnique()
+                .HasDatabaseName("ix_memory_evidence_semantic_event_unique");
         });
 
         modelBuilder.Entity<ProceduralRule>(e =>

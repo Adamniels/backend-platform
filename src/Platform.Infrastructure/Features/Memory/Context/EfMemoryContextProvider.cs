@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Platform.Application.Abstractions.Memory.Context;
 using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Features.Memory.Context;
+using Platform.Application.Features.Memory.Events;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
@@ -12,7 +14,8 @@ namespace Platform.Infrastructure.Features.Memory.Context;
 public sealed class EfMemoryContextProvider(
     PlatformDbContext db,
     IMemoryEmbeddingGenerator embeddingGenerator,
-    IMemoryVectorRecallSearch vectorRecallSearch) : IMemoryContextProvider
+    IMemoryVectorRecallSearch vectorRecallSearch,
+    ILogger<EfMemoryContextProvider> logger) : IMemoryContextProvider
 {
     public async Task<MemoryContextV1Dto> GetContextAsync(
         MemoryContextRequest request,
@@ -158,9 +161,44 @@ public sealed class EfMemoryContextProvider(
                     (s.Status == SemanticMemoryStatus.Active || s.Status == SemanticMemoryStatus.PendingReview))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        var semanticIds = semanticsIn.Select(s => s.Id).ToList();
+        Dictionary<long, (int Count, IReadOnlyList<long> TopEventIds)> evidenceBySemantic = new();
+        if (semanticIds.Count > 0)
+        {
+            var linkRows = await (
+                    from ev in db.MemoryEvidences.AsNoTracking()
+                    join e in db.MemoryEvents.AsNoTracking() on ev.EventId equals e.Id
+                    where ev.UserId == userId && semanticIds.Contains(ev.SemanticMemoryId)
+                    select new { ev.SemanticMemoryId, ev.EventId, e.OccurredAt })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            foreach (var g in linkRows.GroupBy(x => x.SemanticMemoryId))
+            {
+                var topIds = g.OrderByDescending(x => x.OccurredAt)
+                    .Select(x => x.EventId)
+                    .Distinct()
+                    .Take(8)
+                    .ToList();
+                evidenceBySemantic[g.Key] = (g.Count(), topIds);
+            }
+        }
+
         var semanticDtos = new List<SemanticMemoryContextV1Dto>();
         foreach (var s in semanticsIn)
         {
+            _ = evidenceBySemantic.TryGetValue(s.Id, out var evPack);
+            var evidenceCount = evPack.Count;
+            var supportingIds = evPack.TopEventIds ?? Array.Empty<long>();
+            if (evidenceCount == 0)
+            {
+                logger.LogWarning(
+                    "Semantic memory {SemanticId} (user {UserId}, key {Key}) has no linked evidence rows.",
+                    s.Id,
+                    userId,
+                    s.Key);
+            }
+
             var wRel = MemoryContextV1Scoring.WorkflowRelevance(workflow, null);
             var pRel = MemoryContextV1Scoring.ProjectRelevance(project, null);
             var rec = MemoryContextV1Scoring.RecencyScore(s.UpdatedAt, now, 45d);
@@ -188,6 +226,9 @@ public sealed class EfMemoryContextProvider(
                     Status = MemoryContextV1Scoring.SemanticStatusString(s.Status),
                     UpdatedAt = s.UpdatedAt,
                     RankScore = rank,
+                    EvidenceLinkCount = evidenceCount,
+                    SupportingEventIds = supportingIds,
+                    LastSupportedAt = s.LastSupportedAt,
                 });
         }
 
@@ -209,10 +250,11 @@ public sealed class EfMemoryContextProvider(
             var wRel = MemoryContextV1Scoring.WorkflowRelevance(workflow, e.WorkflowId);
             var pRel = MemoryContextV1Scoring.ProjectRelevance(project, e.ProjectId);
             var rec = MemoryContextV1Scoring.RecencyScore(e.OccurredAt, now, 20d);
+            var payloadForRank = MemoryEventPayloadForRetrieval.TruncateForRanking(e.PayloadJson);
             var tm = MemoryContextV1Scoring.TextMatchRatio(
                 queryTokens,
                 e.EventType,
-                e.PayloadJson,
+                payloadForRank,
                 e.Domain);
             var dm = DomainRelevance(domain, e.Domain);
             const double neutralAuthority = 0.55d;

@@ -1,3 +1,4 @@
+using Platform.Application.Features.Memory.Events;
 using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Domain.Features.Memory.Entities;
 
@@ -56,5 +57,14 @@ public sealed class IngestMemoryEventCommandValidatorTests
         var result = v.Validate(
             new IngestMemoryEventCommand("workflow.step", null, "wf-1", "proj-1", "{\"a\":1}", 0, null));
         Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Payload_json_over_max_length_fails()
+    {
+        var v = new IngestMemoryEventCommandValidator();
+        var huge = new string('x', MemoryEventPayloadLimits.MaxPayloadJsonChars + 1);
+        var result = v.Validate(new IngestMemoryEventCommand("evt", null, null, null, huge, 0, null));
+        Assert.False(result.IsValid);
     }
 }
