@@ -32,6 +32,7 @@ public enum MemoryReviewProposalType
     NewSemantic = 1,
     AdjustConfidence = 2,
     MergeDuplicate = 3,
+    NewProceduralRule = 4,
 }
 
 public enum MemoryReviewStatus

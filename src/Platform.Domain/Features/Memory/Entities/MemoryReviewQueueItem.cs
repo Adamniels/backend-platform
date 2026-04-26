@@ -21,6 +21,9 @@ public sealed class MemoryReviewQueueItem
     public long? ApprovedSemanticMemoryId { get; set; }
     public SemanticMemory? ApprovedSemanticMemory { get; set; }
 
+    public long? ApprovedProceduralRuleId { get; set; }
+    public ProceduralRule? ApprovedProceduralRule { get; set; }
+
     public string? RejectedReason { get; set; }
     public DateTimeOffset? ResolvedAt { get; set; }
     public string? ReviewNotes { get; set; }
@@ -55,11 +58,16 @@ public sealed class MemoryReviewQueueItem
         };
     }
 
-    public void Approve(DateTimeOffset at, long? approvedSemanticMemoryId, string? reviewNotes)
+    public void Approve(
+        DateTimeOffset at,
+        long? approvedSemanticMemoryId,
+        long? approvedProceduralRuleId,
+        string? reviewNotes)
     {
         EnsurePending();
         Status = MemoryReviewStatus.Approved;
         ApprovedSemanticMemoryId = approvedSemanticMemoryId;
+        ApprovedProceduralRuleId = approvedProceduralRuleId;
         ReviewNotes = string.IsNullOrWhiteSpace(reviewNotes) ? null : reviewNotes.Trim();
         ResolvedAt = at;
         UpdatedAt = at;

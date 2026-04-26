@@ -258,7 +258,7 @@ public sealed class EfMemoryContextProvider(PlatformDbContext db) : IMemoryConte
         {
             var wRel = MemoryContextV1Scoring.WorkflowRelevance(workflow, r.WorkflowType);
             var rec = MemoryContextV1Scoring.RecencyScore(r.UpdatedAt, now, 120d);
-            const double ruleAuthority = 0.9d;
+            var ruleAuthority = r.AuthorityWeight;
             const double ruleConfidence = 0.85d;
             var rank = MemoryContextV1Scoring.CombinedLearnerRank(
                 ruleAuthority,
@@ -280,6 +280,8 @@ public sealed class EfMemoryContextProvider(PlatformDbContext db) : IMemoryConte
                     Priority = r.Priority,
                     Version = r.Version,
                     Status = MemoryContextV1Scoring.ProceduralStatusString(r.Status),
+                    Source = r.Source,
+                    AuthorityWeight = r.AuthorityWeight,
                     RankScore = rank,
                 });
         }

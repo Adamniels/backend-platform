@@ -18,9 +18,10 @@ public sealed class MemoryReviewQueueItemDomainTests
             null,
             2,
             t);
-        row.Approve(t.AddMinutes(1), 99L, "ok");
+        row.Approve(t.AddMinutes(1), 99L, null, "ok");
         Assert.Equal(MemoryReviewStatus.Approved, row.Status);
         Assert.Equal(99L, row.ApprovedSemanticMemoryId);
+        Assert.Null(row.ApprovedProceduralRuleId);
         Assert.NotNull(row.ResolvedAt);
 
         var row2 = MemoryReviewQueueItem.Propose(

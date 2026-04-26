@@ -14,4 +14,5 @@ public sealed record MemoryReviewQueueItemV1Dto(
     string? ResolvedAtIso,
     string? ReviewNotes,
     string? ProposedChangeJson,
-    string? EvidenceJson);
+    string? EvidenceJson,
+    long? ApprovedProceduralRuleId);

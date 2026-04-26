@@ -54,5 +54,35 @@ public sealed class CreateReviewQueueItemCommandValidator : AbstractValidator<Cr
                     out var t) &&
                     t == MemoryReviewProposalType.NewSemantic)
             .WithMessage("ProposedChangeJson must be a valid NewSemantic proposal for this type.");
+        RuleFor(x => x)
+            .Must(
+                cmd =>
+                {
+                    if (!Enum.TryParse<MemoryReviewProposalType>(
+                            cmd.ProposalType,
+                            ignoreCase: true,
+                            out var pt) ||
+                        pt != MemoryReviewProposalType.NewProceduralRule)
+                    {
+                        return true;
+                    }
+
+                    try
+                    {
+                        _ = MemoryReviewProposalJson.ParseNewProceduralRule(cmd.ProposedChangeJson);
+                        return true;
+                    }
+                    catch (MemoryDomainException)
+                    {
+                        return false;
+                    }
+                })
+            .When(
+                x => Enum.TryParse<MemoryReviewProposalType>(
+                    x.ProposalType,
+                    ignoreCase: true,
+                    out var t) &&
+                    t == MemoryReviewProposalType.NewProceduralRule)
+            .WithMessage("ProposedChangeJson must be a valid NewProceduralRule proposal for this type.");
     }
 }

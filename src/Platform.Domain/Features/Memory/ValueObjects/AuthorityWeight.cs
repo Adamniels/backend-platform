@@ -10,6 +10,9 @@ public readonly record struct AuthorityWeight(double Value)
     /// <summary>User approved a proposed semantic via review queue — higher than <see cref="Inferred" />, below direct explicit entry.</summary>
     public static AuthorityWeight UserApprovedSemantic { get; } = new(0.92);
 
+    /// <summary>Review-approved procedural rule (same floor as user-approved semantics).</summary>
+    public static AuthorityWeight UserApprovedProcedural { get; } = new(0.92);
+
     public static AuthorityWeight Inferred { get; } = new(0.55);
 
     /// <summary>At or above this authority, automated inferred updates must not change claim/confidence/authority (see semantic management rules).</summary>

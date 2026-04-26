@@ -5,6 +5,13 @@ using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Application.Features.Memory.Items.ListItems;
 using Platform.Application.Features.Memory.Legacy.Insights;
 using Platform.Application.Features.Memory.Profile.GetProfileMemory;
+using Platform.Application.Features.Memory.Procedural.ActivateProceduralRule;
+using Platform.Application.Features.Memory.Procedural.CreateProceduralRule;
+using Platform.Application.Features.Memory.Procedural.DeprecateProceduralRule;
+using Platform.Application.Features.Memory.Procedural.GetProceduralRule;
+using Platform.Application.Features.Memory.Procedural.ListProceduralRules;
+using Platform.Application.Features.Memory.Procedural.PublishProceduralRuleVersion;
+using Platform.Application.Features.Memory.Procedural.UpdateProceduralRulePriority;
 using Platform.Application.Features.Memory.Profile.UpdateProfileMemory;
 using Platform.Application.Features.Memory.ReviewQueue.ApproveItem;
 using Platform.Application.Features.Memory.ReviewQueue.CreateItem;
@@ -47,5 +54,12 @@ public static class MemoryApplicationServiceCollectionExtensions
             .AddScoped<ListSemanticMemoriesQueryHandler>()
             .AddScoped<GetSemanticMemoryQueryHandler>()
             .AddScoped<FindSimilarSemanticMemoriesQueryHandler>()
-            .AddScoped<ExecuteNightlyMemoryConsolidationCommandHandler>();
+            .AddScoped<ExecuteNightlyMemoryConsolidationCommandHandler>()
+            .AddScoped<ListProceduralRulesQueryHandler>()
+            .AddScoped<GetProceduralRuleQueryHandler>()
+            .AddScoped<CreateProceduralRuleCommandHandler>()
+            .AddScoped<PublishProceduralRuleVersionCommandHandler>()
+            .AddScoped<UpdateProceduralRulePriorityCommandHandler>()
+            .AddScoped<ActivateProceduralRuleCommandHandler>()
+            .AddScoped<DeprecateProceduralRuleCommandHandler>();
 }

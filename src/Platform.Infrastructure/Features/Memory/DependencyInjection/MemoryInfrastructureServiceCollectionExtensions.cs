@@ -14,6 +14,7 @@ using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Events;
 using Platform.Infrastructure.Features.Memory.Evidence;
 using Platform.Infrastructure.Features.Memory.Legacy;
+using Platform.Infrastructure.Features.Memory.Procedural;
 using Platform.Infrastructure.Features.Memory.Profile;
 using Platform.Infrastructure.Features.Memory.Review;
 using Platform.Infrastructure.Features.Memory.Semantic;
@@ -34,7 +35,9 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddSingleton<IMemoryConsolidationPolicyProvider, DefaultMemoryConsolidationPolicyProvider>()
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, EfSemanticMemoryReadRepository>()
-            .AddScoped<IProceduralRuleReadRepository, ProceduralRuleReadRepositoryStub>()
+            .AddScoped<EfProceduralRuleService>()
+            .AddScoped<IProceduralRuleService>(sp => sp.GetRequiredService<EfProceduralRuleService>())
+            .AddScoped<IProceduralRuleReadRepository>(sp => sp.GetRequiredService<EfProceduralRuleService>())
             .AddScoped<IMemoryContextProvider, EfMemoryContextProvider>()
             .AddScoped<IExplicitUserProfileRepository, EfExplicitUserProfileRepository>()
             .AddScoped<IMemoryReviewService, EfMemoryReviewService>()

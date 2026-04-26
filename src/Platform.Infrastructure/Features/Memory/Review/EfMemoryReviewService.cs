@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Features.Memory.Review;
 using Platform.Contracts.V1.Memory;
@@ -9,7 +10,8 @@ using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Review;
 
-public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewService
+public sealed class EfMemoryReviewService(PlatformDbContext db, IProceduralRuleService proceduralRules)
+    : IMemoryReviewService
 {
     public async Task<MemoryReviewQueueItem> CreatePendingAsync(
         MemoryReviewQueueItem item,
@@ -39,7 +41,7 @@ public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewS
             .AsTracking()
             .FirstOrDefaultAsync(x => x.Id == reviewItemId && x.UserId == userId, cancellationToken);
 
-    public async Task<long?> ApproveAsync(
+    public async Task<MemoryReviewApprovalResult> ApproveAsync(
         long reviewItemId,
         int userId,
         string? reviewNotes,
@@ -65,6 +67,7 @@ public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewS
 
             var at = DateTimeOffset.UtcNow;
             long? semanticId = null;
+            long? proceduralRuleId = null;
             switch (row.ProposalType)
             {
                 case MemoryReviewProposalType.NewSemantic:
@@ -76,6 +79,12 @@ public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewS
                         cancellationToken)
                         .ConfigureAwait(false);
                     break;
+                case MemoryReviewProposalType.NewProceduralRule:
+                    var procPayload = MemoryReviewProposalJson.ParseNewProceduralRule(row.ProposedChangeJson);
+                    proceduralRuleId = await proceduralRules
+                        .ApplyApprovedNewProceduralProposalAsync(userId, procPayload, at, cancellationToken)
+                        .ConfigureAwait(false);
+                    break;
                 case MemoryReviewProposalType.AdjustConfidence:
                 case MemoryReviewProposalType.MergeDuplicate:
                 case MemoryReviewProposalType.Unspecified:
@@ -84,10 +93,10 @@ public sealed class EfMemoryReviewService(PlatformDbContext db) : IMemoryReviewS
                         $"Proposal type {row.ProposalType} is not supported for approval in v1.");
             }
 
-            row.Approve(at, semanticId, reviewNotes);
+            row.Approve(at, semanticId, proceduralRuleId, reviewNotes);
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return semanticId;
+            return new MemoryReviewApprovalResult(semanticId, proceduralRuleId);
         }
         catch
         {

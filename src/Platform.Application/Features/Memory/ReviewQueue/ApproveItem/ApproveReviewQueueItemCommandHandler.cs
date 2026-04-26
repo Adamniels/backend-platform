@@ -13,9 +13,13 @@ public sealed class ApproveReviewQueueItemCommandHandler(IMemoryReviewService re
         var userId = command.UserId is 0
             ? MemoryUser.DefaultId
             : command.UserId;
-        var id = await reviews
+        var r = await reviews
             .ApproveAsync(command.ReviewItemId, userId, command.ReviewNotes, cancellationToken)
             .ConfigureAwait(false);
-        return new ApproveMemoryReviewQueueItemV1Response { SemanticMemoryId = id };
+        return new ApproveMemoryReviewQueueItemV1Response
+        {
+            SemanticMemoryId = r.SemanticMemoryId,
+            ProceduralRuleId = r.ProceduralRuleId,
+        };
     }
 }

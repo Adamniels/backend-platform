@@ -40,4 +40,5 @@ public sealed class PatchMemoryReviewQueueItemV1Request
 public sealed class ApproveMemoryReviewQueueItemV1Response
 {
     public long? SemanticMemoryId { get; set; }
+    public long? ProceduralRuleId { get; set; }
 }

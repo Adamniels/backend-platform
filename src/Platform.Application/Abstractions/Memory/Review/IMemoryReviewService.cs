@@ -18,7 +18,7 @@ public interface IMemoryReviewService
         int userId,
         CancellationToken cancellationToken = default);
 
-    Task<long?> ApproveAsync(
+    Task<MemoryReviewApprovalResult> ApproveAsync(
         long reviewItemId,
         int userId,
         string? reviewNotes,

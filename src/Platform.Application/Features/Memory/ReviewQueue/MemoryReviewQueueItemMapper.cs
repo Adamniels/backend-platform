@@ -21,7 +21,8 @@ public static class MemoryReviewQueueItemMapper
             x.ResolvedAt?.ToString("O"),
             x.ReviewNotes,
             x.ProposedChangeJson,
-            x.EvidenceJson);
+            x.EvidenceJson,
+            x.ApprovedProceduralRuleId);
 
     public static IReadOnlyList<MemoryReviewQueueItemV1Dto> ToV1Dtos(IReadOnlyList<MemoryReviewQueueItem> items) =>
         items.Select(ToV1Dto).ToList();

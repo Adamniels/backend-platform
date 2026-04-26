@@ -4,6 +4,7 @@ using Platform.Api.Features.Memory.Legacy.Insights;
 using Platform.Api.Features.Memory.Module;
 using Platform.Api.Features.Memory.Profile;
 using Platform.Api.Features.Memory.Review;
+using Platform.Api.Features.Memory.Procedural;
 using Platform.Api.Features.Memory.Semantic;
 
 namespace Platform.Api.Features.Memory;
@@ -18,6 +19,7 @@ public static class MemoryV1Routes
         MemoryReviewV1Routes.Map(v1);
         ProfileMemoryV1Routes.Map(v1);
         SemanticMemoryV1Routes.Map(v1);
+        ProceduralMemoryV1Routes.Map(v1);
         MemoryInsightsV1Routes.Map(v1);
     }
 }

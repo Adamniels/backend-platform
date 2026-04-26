@@ -126,6 +126,7 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.RuleName).HasMaxLength(256);
             e.Property(x => x.RuleContent).HasColumnType("text");
             e.Property(x => x.Source).HasMaxLength(512);
+            e.Property(x => x.AuthorityWeight).HasColumnType("double precision");
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
@@ -157,10 +158,15 @@ public static class MemoryV1EfConfiguration
                 .WithMany()
                 .HasForeignKey(x => x.ApprovedSemanticMemoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.ApprovedProceduralRule)
+                .WithMany()
+                .HasForeignKey(x => x.ApprovedProceduralRuleId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             e.HasIndex(x => new { x.UserId, x.Status, x.Priority })
                 .HasDatabaseName("ix_memory_review_queue_user_id_status_priority");
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_memory_review_queue_created_at");
+            e.HasIndex(x => x.ApprovedProceduralRuleId);
         });
 
         modelBuilder.Entity<MemoryConsolidationRun>(e =>

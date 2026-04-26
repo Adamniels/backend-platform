@@ -79,6 +79,8 @@ public sealed class ProceduralRuleContextV1Dto
     public int Priority { get; set; }
     public int Version { get; set; }
     public string Status { get; set; } = "";
+    public string Source { get; set; } = "";
+    public double AuthorityWeight { get; set; }
     public double RankScore { get; set; }
 }
 
