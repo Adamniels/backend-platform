@@ -26,11 +26,19 @@ public sealed class SemanticMemory
         double confidence,
         AuthorityWeight authority,
         string? domain,
-        DateTimeOffset at)
+        DateTimeOffset at,
+        SemanticMemoryStatus status = SemanticMemoryStatus.Active)
     {
         if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(claim))
         {
             throw new MemoryDomainException("Semantic memory requires non-empty key and claim.");
+        }
+
+        if (status
+            is not (SemanticMemoryStatus.Active
+                or SemanticMemoryStatus.PendingReview))
+        {
+            throw new MemoryDomainException("New semantic memory must be created in Active or PendingReview status.");
         }
 
         MemoryValueConstraints.ThrowIfOutOf01(nameof(confidence), confidence);
@@ -44,14 +52,33 @@ public sealed class SemanticMemory
             Domain = string.IsNullOrWhiteSpace(domain) ? null : domain.Trim(),
             Confidence = confidence,
             AuthorityWeight = authority.Value,
-            Status = SemanticMemoryStatus.Active,
+            Status = status,
             CreatedAt = at,
             UpdatedAt = at,
         };
     }
 
-    public void ReinforceWithEvidence(double confidenceDelta, DateTimeOffset supportedAt, DateTimeOffset at)
+    /// <summary>Automated inferred updates must not mutate rows at or above the user-approval floor (see <see cref="ValueObjects.AuthorityWeight" />).</summary>
+    public void ThrowIfInferredMutationBlocked()
     {
+        if (this.AuthorityWeight >= global::Platform.Domain.Features.Memory.ValueObjects.AuthorityWeight.InferredOverrideCeiling)
+        {
+            throw new MemoryDomainException(
+                "Inferred or low-trust updates cannot change this semantic: authority is at or above the user-approval floor.");
+        }
+    }
+
+    public void ReinforceWithEvidence(
+        double confidenceDelta,
+        DateTimeOffset supportedAt,
+        DateTimeOffset at,
+        bool fromInferredSource = false)
+    {
+        if (fromInferredSource)
+        {
+            ThrowIfInferredMutationBlocked();
+        }
+
         if (Status is not (SemanticMemoryStatus.Active or SemanticMemoryStatus.PendingReview))
         {
             throw new MemoryDomainException("Can only reinforce active or pending-review semantic memories.");
@@ -60,6 +87,18 @@ public sealed class SemanticMemory
         var next = MemoryValueConstraints.Clamp01(Confidence + confidenceDelta);
         Confidence = next;
         LastSupportedAt = supportedAt;
+        UpdatedAt = at;
+    }
+
+    public void SetConfidence(double newConfidence, DateTimeOffset at)
+    {
+        if (Status is not (SemanticMemoryStatus.Active or SemanticMemoryStatus.PendingReview))
+        {
+            throw new MemoryDomainException("Can only set confidence on active or pending-review semantic memories.");
+        }
+
+        MemoryValueConstraints.ThrowIfOutOf01(nameof(newConfidence), newConfidence);
+        Confidence = newConfidence;
         UpdatedAt = at;
     }
 
@@ -78,7 +117,23 @@ public sealed class SemanticMemory
 
     public void MarkArchived(DateTimeOffset at)
     {
+        if (Status is not (SemanticMemoryStatus.Active or SemanticMemoryStatus.PendingReview))
+        {
+            throw new MemoryDomainException("Can only archive active or pending-review semantic memories.");
+        }
+
         Status = SemanticMemoryStatus.Archived;
+        UpdatedAt = at;
+    }
+
+    public void MarkRejected(DateTimeOffset at)
+    {
+        if (Status is not SemanticMemoryStatus.PendingReview)
+        {
+            throw new MemoryDomainException("Can only reject pending-review semantic memories; use archive for active rows.");
+        }
+
+        Status = SemanticMemoryStatus.Rejected;
         UpdatedAt = at;
     }
 

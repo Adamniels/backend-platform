@@ -125,6 +125,7 @@ public static class MemoryContextV1Scoring
             SemanticMemoryStatus.Active => 1d,
             SemanticMemoryStatus.PendingReview => 0.72d,
             SemanticMemoryStatus.Unknown => 0.5d,
+            SemanticMemoryStatus.Rejected => 0.15d,
             _ => 0.2d,
         };
 
@@ -134,6 +135,7 @@ public static class MemoryContextV1Scoring
         SemanticMemoryStatus.PendingReview => "PendingReview",
         SemanticMemoryStatus.Superseded => "Superseded",
         SemanticMemoryStatus.Archived => "Archived",
+        SemanticMemoryStatus.Rejected => "Rejected",
         _ => s.ToString(),
     };
 

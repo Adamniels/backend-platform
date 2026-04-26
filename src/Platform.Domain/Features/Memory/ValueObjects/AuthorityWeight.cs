@@ -12,6 +12,9 @@ public readonly record struct AuthorityWeight(double Value)
 
     public static AuthorityWeight Inferred { get; } = new(0.55);
 
+    /// <summary>At or above this authority, automated inferred updates must not change claim/confidence/authority (see semantic management rules).</summary>
+    public static double InferredOverrideCeiling { get; } = UserApprovedSemantic.Value;
+
     public static bool TryCreate(double value, out AuthorityWeight weight)
     {
         if (double.IsNaN(value) || value is < MemoryValueConstraints.MinUnit or > MemoryValueConstraints.MaxUnit)

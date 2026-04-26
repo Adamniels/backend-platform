@@ -2,7 +2,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Platform.Domain.Features.Memory;
 using Platform.Api.Access;
 using Platform.Application.Configuration;
 using Platform.Api.Features;
@@ -84,6 +86,17 @@ app.UseExceptionHandler(errorApp =>
     {
         var feature = context.Features.Get<IExceptionHandlerFeature>();
         var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Platform.Errors");
+        if (feature?.Error is MemoryConflictException cex)
+        {
+            await Results.Problem(
+                    title: "Conflict",
+                    detail: cex.Message,
+                    statusCode: StatusCodes.Status409Conflict)
+                .ExecuteAsync(context)
+                .ConfigureAwait(false);
+            return;
+        }
+
         if (feature?.Error is not null)
         {
             logger.LogError(feature.Error, "Unhandled exception");

@@ -67,4 +67,5 @@ public enum SemanticMemoryStatus
     Superseded = 2,
     Archived = 3,
     PendingReview = 4,
+    Rejected = 5,
 }
