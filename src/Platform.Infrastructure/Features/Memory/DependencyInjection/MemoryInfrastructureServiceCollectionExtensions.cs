@@ -11,6 +11,7 @@ using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Events;
 using Platform.Infrastructure.Features.Memory.Legacy;
 using Platform.Infrastructure.Features.Memory.Profile;
+using Platform.Infrastructure.Features.Memory.Review;
 using Platform.Infrastructure.Features.Memory.Stubs;
 
 namespace Platform.Infrastructure.Features.Memory.DependencyInjection;
@@ -25,9 +26,8 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, SemanticMemoryReadRepositoryStub>()
             .AddScoped<IProceduralRuleReadRepository, ProceduralRuleReadRepositoryStub>()
-            .AddScoped<IMemoryReviewQueueReadRepository, MemoryReviewQueueReadRepositoryStub>()
             .AddScoped<IMemoryContextProvider, EfMemoryContextProvider>()
             .AddScoped<IExplicitUserProfileRepository, EfExplicitUserProfileRepository>()
-            .AddScoped<IMemoryReviewService, MemoryReviewServiceShell>()
+            .AddScoped<IMemoryReviewService, EfMemoryReviewService>()
             .AddScoped<ISemanticMemoryService, SemanticMemoryServiceShell>();
 }

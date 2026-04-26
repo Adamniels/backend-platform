@@ -81,4 +81,28 @@ public sealed class SemanticMemory
         Status = SemanticMemoryStatus.Archived;
         UpdatedAt = at;
     }
+
+    public void ApplyUserApprovedRevision(
+        string claim,
+        double confidence,
+        AuthorityWeight authority,
+        DateTimeOffset at)
+    {
+        if (Status is not (SemanticMemoryStatus.Active or SemanticMemoryStatus.PendingReview))
+        {
+            throw new MemoryDomainException("Can only revise active or pending-review semantic memories.");
+        }
+
+        if (string.IsNullOrWhiteSpace(claim))
+        {
+            throw new MemoryDomainException("Claim is required.");
+        }
+
+        MemoryValueConstraints.ThrowIfOutOf01(nameof(confidence), confidence);
+        authority.ThrowIfNotValid();
+        Claim = claim.Trim();
+        Confidence = confidence;
+        AuthorityWeight = authority.Value;
+        UpdatedAt = at;
+    }
 }

@@ -6,6 +6,10 @@ namespace Platform.Domain.Features.Memory.ValueObjects;
 public readonly record struct AuthorityWeight(double Value)
 {
     public static AuthorityWeight ExplicitUserTruth { get; } = new(1.0);
+
+    /// <summary>User approved a proposed semantic via review queue — higher than <see cref="Inferred" />, below direct explicit entry.</summary>
+    public static AuthorityWeight UserApprovedSemantic { get; } = new(0.92);
+
     public static AuthorityWeight Inferred { get; } = new(0.55);
 
     public static bool TryCreate(double value, out AuthorityWeight weight)

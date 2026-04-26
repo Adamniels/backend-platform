@@ -146,11 +146,17 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.Summary).HasMaxLength(4000);
             e.Property(x => x.ProposedChangeJson).HasColumnType("jsonb");
             e.Property(x => x.EvidenceJson).HasColumnType("jsonb");
+            e.Property(x => x.RejectedReason).HasMaxLength(2000);
+            e.Property(x => x.ReviewNotes).HasMaxLength(4000);
 
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ApprovedSemanticMemory)
+                .WithMany()
+                .HasForeignKey(x => x.ApprovedSemanticMemoryId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             e.HasIndex(x => new { x.UserId, x.Status, x.Priority })
                 .HasDatabaseName("ix_memory_review_queue_user_id_status_priority");

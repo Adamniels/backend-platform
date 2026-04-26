@@ -1,6 +1,5 @@
 using Platform.Application.Abstractions.Memory.Items;
 using Platform.Application.Abstractions.Memory.Procedural;
-using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Contracts.V1.Memory;
 
@@ -33,11 +32,3 @@ public sealed class ProceduralRuleReadRepositoryStub : IProceduralRuleReadReposi
             Array.Empty<ProceduralRuleSummaryV1Dto>());
 }
 
-public sealed class MemoryReviewQueueReadRepositoryStub : IMemoryReviewQueueReadRepository
-{
-    public Task<IReadOnlyList<MemoryReviewQueueItemV1Dto>> ListPendingForUserAsync(
-        int _,
-        CancellationToken __ = default) =>
-        Task.FromResult<IReadOnlyList<MemoryReviewQueueItemV1Dto>>(
-            Array.Empty<MemoryReviewQueueItemV1Dto>());
-}

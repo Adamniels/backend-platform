@@ -6,7 +6,11 @@ using Platform.Application.Features.Memory.Items.ListItems;
 using Platform.Application.Features.Memory.Legacy.Insights;
 using Platform.Application.Features.Memory.Profile.GetProfileMemory;
 using Platform.Application.Features.Memory.Profile.UpdateProfileMemory;
+using Platform.Application.Features.Memory.ReviewQueue.ApproveItem;
+using Platform.Application.Features.Memory.ReviewQueue.CreateItem;
 using Platform.Application.Features.Memory.ReviewQueue.ListPending;
+using Platform.Application.Features.Memory.ReviewQueue.PatchItem;
+using Platform.Application.Features.Memory.ReviewQueue.RejectItem;
 
 namespace Platform.Application.Features.Memory.DependencyInjection;
 
@@ -19,6 +23,10 @@ public static class MemoryApplicationServiceCollectionExtensions
             .AddScoped<ListMemoryItemsQueryHandler>()
             .AddScoped<GetMemoryContextQueryHandler>()
             .AddScoped<ListMemoryReviewQueueQueryHandler>()
+            .AddScoped<CreateReviewQueueItemCommandHandler>()
+            .AddScoped<ApproveReviewQueueItemCommandHandler>()
+            .AddScoped<RejectReviewQueueItemCommandHandler>()
+            .AddScoped<PatchReviewQueueItemCommandHandler>()
             .AddScoped<GetProfileMemoryQueryHandler>()
             .AddScoped<UpdateProfileMemoryCommandHandler>()
             .AddScoped<PostMemoryContextRequestHandler>();
