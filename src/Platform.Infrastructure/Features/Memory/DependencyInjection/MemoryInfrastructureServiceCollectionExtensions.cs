@@ -7,6 +7,7 @@ using Platform.Application.Abstractions.Memory.Profile;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Events;
 using Platform.Infrastructure.Features.Memory.Legacy;
 using Platform.Infrastructure.Features.Memory.Profile;
@@ -25,7 +26,7 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddScoped<ISemanticMemoryReadRepository, SemanticMemoryReadRepositoryStub>()
             .AddScoped<IProceduralRuleReadRepository, ProceduralRuleReadRepositoryStub>()
             .AddScoped<IMemoryReviewQueueReadRepository, MemoryReviewQueueReadRepositoryStub>()
-            .AddScoped<IMemoryContextProvider, MemoryContextProviderShell>()
+            .AddScoped<IMemoryContextProvider, EfMemoryContextProvider>()
             .AddScoped<IExplicitUserProfileRepository, EfExplicitUserProfileRepository>()
             .AddScoped<IMemoryReviewService, MemoryReviewServiceShell>()
             .AddScoped<ISemanticMemoryService, SemanticMemoryServiceShell>();

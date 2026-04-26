@@ -8,8 +8,8 @@ namespace Platform.Application.Abstractions.Memory.Context;
 /// </summary>
 public interface IMemoryContextProvider
 {
-    /// <summary>Returns a versioned shell until full pipeline is implemented; call sites should not treat as exhaustive.</summary>
-    Task<MemoryContextShellV1Dto> GetContextAsync(
+    /// <summary>Returns a ranked v1 memory packet (SQL + deterministic scoring; not exhaustive raw tables).</summary>
+    Task<MemoryContextV1Dto> GetContextAsync(
         MemoryContextRequest request,
         CancellationToken cancellationToken = default);
 }

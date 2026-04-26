@@ -1,6 +1,8 @@
 namespace Platform.Application.Features.Memory.Context.GetMemoryContextShell;
 
 public readonly record struct GetMemoryContextQuery(
-    int UserId = 1,
+    int UserId = 0,
+    string? TaskDescription = null,
     string? WorkflowType = null,
-    string? TaskLabel = null);
+    string? ProjectId = null,
+    string? Domain = null);

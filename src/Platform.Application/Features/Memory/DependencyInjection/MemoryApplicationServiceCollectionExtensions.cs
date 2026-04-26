@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Features.Memory.Context.GetMemoryContextShell;
+using Platform.Application.Features.Memory.Context.GetMemoryContextV1;
 using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Application.Features.Memory.Items.ListItems;
 using Platform.Application.Features.Memory.Legacy.Insights;
@@ -19,5 +20,6 @@ public static class MemoryApplicationServiceCollectionExtensions
             .AddScoped<GetMemoryContextQueryHandler>()
             .AddScoped<ListMemoryReviewQueueQueryHandler>()
             .AddScoped<GetProfileMemoryQueryHandler>()
-            .AddScoped<UpdateProfileMemoryCommandHandler>();
+            .AddScoped<UpdateProfileMemoryCommandHandler>()
+            .AddScoped<PostMemoryContextRequestHandler>();
 }

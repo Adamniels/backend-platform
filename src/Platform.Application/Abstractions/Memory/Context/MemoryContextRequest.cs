@@ -1,7 +1,9 @@
 namespace Platform.Application.Abstractions.Memory.Context;
 
-/// <summary>What the caller is doing when asking for memory context (no ML; scoping for future retrieval rules).</summary>
+/// <summary>What the caller is doing when asking for a curated memory context (v1: SQL + deterministic rank; no vector/graph).</summary>
 public sealed record MemoryContextRequest(
     int UserId,
+    string? TaskDescription = null,
     string? WorkflowType = null,
-    string? TaskLabel = null);
+    string? ProjectId = null,
+    string? Domain = null);
