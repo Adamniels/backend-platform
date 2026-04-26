@@ -1,6 +1,7 @@
 using Platform.Api.Features.Memory.Events;
 using Platform.Api.Features.Memory.Legacy.Insights;
 using Platform.Api.Features.Memory.Module;
+using Platform.Api.Features.Memory.Profile;
 
 namespace Platform.Api.Features.Memory;
 
@@ -10,6 +11,7 @@ public static class MemoryV1Routes
     {
         MemoryModuleV1Routes.Map(v1);
         MemoryEventsV1Routes.Map(v1);
+        ProfileMemoryV1Routes.Map(v1);
         MemoryInsightsV1Routes.Map(v1);
     }
 }

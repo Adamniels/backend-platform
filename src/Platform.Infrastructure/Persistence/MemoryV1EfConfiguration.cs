@@ -16,6 +16,26 @@ public static class MemoryV1EfConfiguration
             e.HasData(new MemoryUser { Id = MemoryUser.DefaultId, CreatedAt = seedT });
         });
 
+        modelBuilder.Entity<ExplicitUserProfile>(e =>
+        {
+            e.ToTable("memory_explicit_profile");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.UserId).IsUnique();
+            e.Property(x => x.CoreInterests)
+                .HasColumnType("text[]");
+            e.Property(x => x.SecondaryInterests)
+                .HasColumnType("text[]");
+            e.Property(x => x.Goals)
+                .HasColumnType("text[]");
+            e.Property(x => x.PreferencesJson).HasColumnType("jsonb");
+            e.Property(x => x.ActiveProjectsJson).HasColumnType("jsonb");
+            e.Property(x => x.SkillLevelsJson).HasColumnType("jsonb");
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<MemoryItem>(e =>
         {
             e.ToTable("memory_items");
