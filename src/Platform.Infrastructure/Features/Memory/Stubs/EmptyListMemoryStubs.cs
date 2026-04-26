@@ -8,7 +8,7 @@ namespace Platform.Infrastructure.Features.Memory.Stubs;
 
 public sealed class MemoryItemReadRepositoryStub : IMemoryItemReadRepository
 {
-    public Task<IReadOnlyList<MemoryItemSummaryV1Dto>> ListSummariesForPrincipalAsync(
+    public Task<IReadOnlyList<MemoryItemSummaryV1Dto>> ListSummariesForUserAsync(
         int _,
         CancellationToken __ = default) =>
         Task.FromResult<IReadOnlyList<MemoryItemSummaryV1Dto>>(
@@ -17,7 +17,7 @@ public sealed class MemoryItemReadRepositoryStub : IMemoryItemReadRepository
 
 public sealed class SemanticMemoryReadRepositoryStub : ISemanticMemoryReadRepository
 {
-    public Task<IReadOnlyList<SemanticMemorySummaryV1Dto>> ListSummariesForPrincipalAsync(
+    public Task<IReadOnlyList<SemanticMemorySummaryV1Dto>> ListSummariesForUserAsync(
         int _,
         CancellationToken __ = default) =>
         Task.FromResult<IReadOnlyList<SemanticMemorySummaryV1Dto>>(
@@ -26,7 +26,7 @@ public sealed class SemanticMemoryReadRepositoryStub : ISemanticMemoryReadReposi
 
 public sealed class ProceduralRuleReadRepositoryStub : IProceduralRuleReadRepository
 {
-    public Task<IReadOnlyList<ProceduralRuleSummaryV1Dto>> ListForPrincipalAsync(
+    public Task<IReadOnlyList<ProceduralRuleSummaryV1Dto>> ListForUserAsync(
         int _,
         CancellationToken __ = default) =>
         Task.FromResult<IReadOnlyList<ProceduralRuleSummaryV1Dto>>(
@@ -35,7 +35,7 @@ public sealed class ProceduralRuleReadRepositoryStub : IProceduralRuleReadReposi
 
 public sealed class MemoryReviewQueueReadRepositoryStub : IMemoryReviewQueueReadRepository
 {
-    public Task<IReadOnlyList<MemoryReviewQueueItemV1Dto>> ListPendingForPrincipalAsync(
+    public Task<IReadOnlyList<MemoryReviewQueueItemV1Dto>> ListPendingForUserAsync(
         int _,
         CancellationToken __ = default) =>
         Task.FromResult<IReadOnlyList<MemoryReviewQueueItemV1Dto>>(

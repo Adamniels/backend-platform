@@ -10,9 +10,9 @@ public sealed class ListMemoryReviewQueueQueryHandler(IMemoryReviewQueueReadRepo
         ListMemoryReviewQueueQuery query,
         CancellationToken cancellationToken = default)
     {
-        var id = query.PrincipalId is 0 ? MemoryPrincipal.SingleTenantKey : query.PrincipalId;
+        var id = query.UserId is 0 ? MemoryUser.DefaultId : query.UserId;
         return await review
-            .ListPendingForPrincipalAsync(id, cancellationToken)
+            .ListPendingForUserAsync(id, cancellationToken)
             .ConfigureAwait(false);
     }
 }

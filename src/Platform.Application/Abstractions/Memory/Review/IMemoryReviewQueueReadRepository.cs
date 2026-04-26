@@ -4,7 +4,7 @@ namespace Platform.Application.Abstractions.Memory.Review;
 
 public interface IMemoryReviewQueueReadRepository
 {
-    Task<IReadOnlyList<MemoryReviewQueueItemV1Dto>> ListPendingForPrincipalAsync(
-        int principalId,
+    Task<IReadOnlyList<MemoryReviewQueueItemV1Dto>> ListPendingForUserAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 }

@@ -10,7 +10,7 @@ public sealed class ListMemoryItemsQueryHandler(IMemoryItemReadRepository items)
         ListMemoryItemsQuery query,
         CancellationToken cancellationToken = default)
     {
-        var id = query.PrincipalId is 0 ? MemoryPrincipal.SingleTenantKey : query.PrincipalId;
-        return await items.ListSummariesForPrincipalAsync(id, cancellationToken).ConfigureAwait(false);
+        var id = query.UserId is 0 ? MemoryUser.DefaultId : query.UserId;
+        return await items.ListSummariesForUserAsync(id, cancellationToken).ConfigureAwait(false);
     }
 }

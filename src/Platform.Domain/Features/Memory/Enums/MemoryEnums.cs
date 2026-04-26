@@ -58,3 +58,13 @@ public enum ProceduralRuleStatus
     Active = 1,
     Deprecated = 2,
 }
+
+/// <summary>Lifecycle for <c>semantic_memories</c> (distinct from <see cref="MemoryItemStatus"/> for flexibility).</summary>
+public enum SemanticMemoryStatus
+{
+    Unknown = 0,
+    Active = 1,
+    Superseded = 2,
+    Archived = 3,
+    PendingReview = 4,
+}

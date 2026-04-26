@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.Domain.Features.Dashboard;
 using Platform.Domain.Features.HumanInput;
 using Platform.Domain.Features.Memory;
+using Platform.Domain.Features.Memory.Entities;
 using Platform.Domain.Features.News;
 using Platform.Domain.Features.Profile;
 using Platform.Domain.Features.SavedItems;
@@ -19,6 +20,14 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<SideLearningTopic> SideLearningTopics => Set<SideLearningTopic>();
     public DbSet<SavedItem> SavedItems => Set<SavedItem>();
     public DbSet<MemoryInsight> MemoryInsights => Set<MemoryInsight>();
+    public DbSet<MemoryUser> MemoryUsers => Set<MemoryUser>();
+    public DbSet<MemoryItem> MemoryItems => Set<MemoryItem>();
+    public DbSet<MemoryEvent> MemoryEvents => Set<MemoryEvent>();
+    public DbSet<SemanticMemory> SemanticMemories => Set<SemanticMemory>();
+    public DbSet<MemoryEvidence> MemoryEvidences => Set<MemoryEvidence>();
+    public DbSet<ProceduralRule> ProceduralRules => Set<ProceduralRule>();
+    public DbSet<MemoryReviewQueueItem> MemoryReviewQueueItems => Set<MemoryReviewQueueItem>();
+    public DbSet<MemoryRelationship> MemoryRelationships => Set<MemoryRelationship>();
     public DbSet<InputNeededItem> InputNeededItems => Set<InputNeededItem>();
     public DbSet<StatsSnapshot> StatsSnapshots => Set<StatsSnapshot>();
 
@@ -183,5 +192,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.Json).HasColumnType("TEXT");
             e.HasData(new StatsSnapshot { Id = StatsSnapshot.SingletonKey, Json = StatsSeedJson.Value });
         });
+
+        modelBuilder.ConfigureMemoryV1();
     }
 }

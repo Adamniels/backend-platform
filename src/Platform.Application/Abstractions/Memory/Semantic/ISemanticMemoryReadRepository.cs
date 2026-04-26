@@ -4,7 +4,7 @@ namespace Platform.Application.Abstractions.Memory.Semantic;
 
 public interface ISemanticMemoryReadRepository
 {
-    Task<IReadOnlyList<SemanticMemorySummaryV1Dto>> ListSummariesForPrincipalAsync(
-        int principalId,
+    Task<IReadOnlyList<SemanticMemorySummaryV1Dto>> ListSummariesForUserAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 }

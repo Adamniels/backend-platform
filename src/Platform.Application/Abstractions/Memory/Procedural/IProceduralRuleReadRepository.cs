@@ -4,7 +4,7 @@ namespace Platform.Application.Abstractions.Memory.Procedural;
 
 public interface IProceduralRuleReadRepository
 {
-    Task<IReadOnlyList<ProceduralRuleSummaryV1Dto>> ListForPrincipalAsync(
-        int principalId,
+    Task<IReadOnlyList<ProceduralRuleSummaryV1Dto>> ListForUserAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 }

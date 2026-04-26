@@ -4,7 +4,7 @@ namespace Platform.Application.Abstractions.Memory.Items;
 
 public interface IMemoryItemReadRepository
 {
-    Task<IReadOnlyList<MemoryItemSummaryV1Dto>> ListSummariesForPrincipalAsync(
-        int principalId,
+    Task<IReadOnlyList<MemoryItemSummaryV1Dto>> ListSummariesForUserAsync(
+        int userId,
         CancellationToken cancellationToken = default);
 }

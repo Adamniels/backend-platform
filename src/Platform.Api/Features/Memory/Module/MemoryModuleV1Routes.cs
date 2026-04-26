@@ -12,7 +12,7 @@ public static class MemoryModuleV1Routes
                     StructureVersion: 1,
                     BoundedContextAreas:
                     [
-                        "ProfileAndPrincipal",
+                        "Users",
                         "Items",
                         "Events",
                         "Semantic",

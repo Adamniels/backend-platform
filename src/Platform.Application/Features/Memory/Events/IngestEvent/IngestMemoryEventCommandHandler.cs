@@ -9,9 +9,8 @@ public sealed class IngestMemoryEventCommandHandler(IMemoryEventWriter events)
         IngestMemoryEventCommand command,
         CancellationToken cancellationToken = default)
     {
-        var p = new MemoryPrincipalId(command.ResolvedPrincipalId);
         var ev = new UncommittedMemoryEvent(
-            p,
+            command.ResolvedUserId,
             command.EventType,
             command.Domain,
             command.WorkflowId,
