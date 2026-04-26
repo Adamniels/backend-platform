@@ -9,14 +9,16 @@ public sealed class IngestMemoryEventCommandHandler(IMemoryEventWriter events)
         IngestMemoryEventCommand command,
         CancellationToken cancellationToken = default)
     {
-        var ev = new UncommittedMemoryEvent(
+        var now = DateTimeOffset.UtcNow;
+        var ev = UncommittedMemoryEvent.CreateForIngest(
             command.ResolvedUserId,
             command.EventType,
             command.Domain,
             command.WorkflowId,
             command.ProjectId,
             command.PayloadJson,
-            DateTimeOffset.UtcNow);
+            now,
+            now);
 
         await events.WriteAsync(ev, cancellationToken).ConfigureAwait(false);
     }

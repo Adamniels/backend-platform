@@ -4,13 +4,18 @@ using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Context.GetMemoryContextShell;
 
-public sealed class GetMemoryContextQueryHandler(IMemoryContextAssembler asm)
+public sealed class GetMemoryContextQueryHandler(IMemoryContextProvider provider)
 {
     public async Task<MemoryContextShellV1Dto> HandleAsync(
         GetMemoryContextQuery query,
         CancellationToken cancellationToken = default)
     {
         var id = query.UserId is 0 ? MemoryUser.DefaultId : query.UserId;
-        return await asm.BuildShellAsync(id, cancellationToken).ConfigureAwait(false);
+        var request = new MemoryContextRequest(
+            id,
+            query.WorkflowType,
+            query.TaskLabel);
+
+        return await provider.GetContextAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }
