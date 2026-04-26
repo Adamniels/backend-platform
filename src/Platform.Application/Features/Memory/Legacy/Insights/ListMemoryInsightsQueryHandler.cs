@@ -1,9 +1,9 @@
-using Platform.Application.Abstractions.Memory;
+using Platform.Application.Abstractions.Memory.Legacy;
 using Platform.Contracts.V1;
 
-namespace Platform.Application.Features.Memory.ListInsights;
+namespace Platform.Application.Features.Memory.Legacy.Insights;
 
-public sealed class ListMemoryInsightsQueryHandler(IMemoryReadRepository memory)
+public sealed class ListMemoryInsightsQueryHandler(ILegacyMemoryInsightsReadRepository memory)
 {
     public async Task<IReadOnlyList<MemoryInsightDto>> HandleAsync(
         ListMemoryInsightsQuery _,

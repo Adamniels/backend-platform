@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Abstractions.Access;
 using Platform.Application.Abstractions.Dashboard;
 using Platform.Application.Abstractions.HumanInput;
-using Platform.Application.Abstractions.Memory;
 using Platform.Application.Abstractions.News;
 using Platform.Application.Abstractions.Profile;
 using Platform.Application.Abstractions.SavedItems;
@@ -16,7 +15,7 @@ using Platform.Infrastructure.Access;
 using Platform.Infrastructure.Configuration;
 using Platform.Infrastructure.Features.Dashboard;
 using Platform.Infrastructure.Features.HumanInput;
-using Platform.Infrastructure.Features.Memory;
+using Platform.Infrastructure.Features.Memory.DependencyInjection;
 using Platform.Infrastructure.Features.News;
 using Platform.Infrastructure.Features.Profile;
 using Platform.Infrastructure.Features.SavedItems;
@@ -31,6 +30,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPlatformInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddPlatformMemoryInfrastructure();
+
         var connectionString = configuration.GetConnectionString("Default")
                                ?? "Host=localhost;Port=5432;Database=platform;Username=platform;Password=platform";
 
@@ -46,7 +47,6 @@ public static class DependencyInjection
         services.AddScoped<INewsReadRepository, NewsReadRepository>();
         services.AddScoped<ISideLearningReadRepository, SideLearningReadRepository>();
         services.AddScoped<ISavedItemsReadRepository, SavedItemsReadRepository>();
-        services.AddScoped<IMemoryReadRepository, MemoryReadRepository>();
         services.AddScoped<IHumanInputReadRepository, HumanInputReadRepository>();
 
         var temporalAddress = configuration["Temporal:Address"];

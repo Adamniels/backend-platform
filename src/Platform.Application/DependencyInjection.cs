@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Features.Access.UnlockSession;
 using Platform.Application.Features.Dashboard.GetSummary;
 using Platform.Application.Features.HumanInput.ListItems;
-using Platform.Application.Features.Memory.ListInsights;
+using Platform.Application.Features.Memory.DependencyInjection;
 using Platform.Application.Features.News.ListFeed;
 using Platform.Application.Features.Profile.GetProfile;
 using Platform.Application.Features.Profile.GetSettings;
@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), includeInternalTypes: true);
 
         return services
+            .AddMemoryApplication()
             .AddScoped<GetDashboardSummaryQueryHandler>()
             .AddScoped<GetStatsQueryHandler>()
             .AddScoped<ListWorkflowRunsQueryHandler>()
@@ -32,7 +33,6 @@ public static class DependencyInjection
             .AddScoped<ListNewsFeedQueryHandler>()
             .AddScoped<ListSideLearningTopicsQueryHandler>()
             .AddScoped<ListSavedItemsQueryHandler>()
-            .AddScoped<ListMemoryInsightsQueryHandler>()
             .AddScoped<ListHumanInputQueryHandler>()
             .AddScoped<UnlockSessionCommandHandler>();
     }

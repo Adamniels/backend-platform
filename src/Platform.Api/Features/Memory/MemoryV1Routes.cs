@@ -1,15 +1,13 @@
-using Platform.Application.Features.Memory.ListInsights;
+using Platform.Api.Features.Memory.Legacy.Insights;
+using Platform.Api.Features.Memory.Module;
 
 namespace Platform.Api.Features.Memory;
 
 public static class MemoryV1Routes
 {
-    public static void Map(RouteGroupBuilder v1) =>
-        v1.MapGet(
-            "memory/insights",
-            async (ListMemoryInsightsQueryHandler h, CancellationToken ct) =>
-                Results.Ok(
-                    await h
-                        .HandleAsync(new ListMemoryInsightsQuery(), ct)
-                        .ConfigureAwait(false)));
+    public static void Map(RouteGroupBuilder v1)
+    {
+        MemoryModuleV1Routes.Map(v1);
+        MemoryInsightsV1Routes.Map(v1);
+    }
 }
