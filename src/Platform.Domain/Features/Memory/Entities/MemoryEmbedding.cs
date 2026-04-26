@@ -27,6 +27,12 @@ public sealed class MemoryEmbedding
     /// <summary>SHA-256 hex (64 chars) of canonical embedded text for idempotency.</summary>
     public string ContentSha256 { get; set; } = "";
 
+    /// <summary>0-based chunk within the parent <see cref="MemoryItem"/> (documents may have many; other types use 0).</summary>
+    public int ChunkIndex { get; set; }
+
+    /// <summary>Text embedded for this row (chunk body or full-item canonical); used for recall previews.</summary>
+    public string? EmbeddedText { get; set; }
+
     public Vector Embedding { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; set; }

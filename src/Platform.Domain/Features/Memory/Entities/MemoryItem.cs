@@ -15,6 +15,13 @@ public sealed class MemoryItem
     public string Content { get; set; } = "";
     public string? StructuredJson { get; set; }
     public string SourceType { get; set; } = "";
+
+    /// <summary>Optional scope for document and other items (e.g. external project id).</summary>
+    public string? ProjectId { get; set; }
+
+    /// <summary>Optional topical scope (e.g. <c>workflow</c>, <c>learning</c>).</summary>
+    public string? Domain { get; set; }
+
     public double AuthorityWeight { get; set; }
     public double Confidence { get; set; }
     public double Importance { get; set; }
@@ -32,7 +39,9 @@ public sealed class MemoryItem
         string sourceType,
         double authorityWeight,
         double confidence,
-        DateTimeOffset at)
+        DateTimeOffset at,
+        string? projectId = null,
+        string? domain = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -51,6 +60,8 @@ public sealed class MemoryItem
             Title = title.Trim(),
             Content = content ?? "",
             SourceType = sourceType ?? "",
+            ProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim(),
+            Domain = string.IsNullOrWhiteSpace(domain) ? null : domain.Trim(),
             AuthorityWeight = authorityWeight,
             Confidence = confidence,
             Importance = importance,

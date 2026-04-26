@@ -14,4 +14,7 @@ public sealed class UpsertMemoryEmbeddingV1Request
 public sealed class UpsertMemoryEmbeddingV1Response
 {
     public long EmbeddingRowId { get; set; }
+
+    /// <summary>Number of <c>memory_embeddings</c> rows written (chunked documents may write many).</summary>
+    public int ChunksWritten { get; set; }
 }

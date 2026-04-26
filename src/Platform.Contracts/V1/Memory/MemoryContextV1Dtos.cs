@@ -34,6 +34,10 @@ public sealed class GetMemoryContextV1Request
 public sealed class MemoryItemVectorRecallV1Dto
 {
     public long MemoryItemId { get; set; }
+
+    /// <summary>0-based chunk when the hit came from a chunked document embedding; otherwise 0.</summary>
+    public int ChunkIndex { get; set; }
+
     public string MemoryType { get; set; } = "";
     public string Title { get; set; } = "";
     public string ContentPreview { get; set; } = "";
@@ -41,6 +45,13 @@ public sealed class MemoryItemVectorRecallV1Dto
     public double AuthorityWeight { get; set; }
     public double RankScore { get; set; }
     public string EmbeddingModelKey { get; set; } = "";
+
+    /// <summary>When <see cref="MemoryType"/> is <c>Document</c>, long-form evidence (not semantic truth).</summary>
+    public bool IsDocumentEvidence { get; set; }
+
+    public string? ProjectId { get; set; }
+    public string? Domain { get; set; }
+    public string SourceType { get; set; } = "";
 }
 
 public sealed class ProfileFactV1Dto

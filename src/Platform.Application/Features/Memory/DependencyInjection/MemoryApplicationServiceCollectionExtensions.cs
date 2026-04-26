@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Features.Memory.Context.GetMemoryContextShell;
 using Platform.Application.Features.Memory.Context.GetMemoryContextV1;
+using Platform.Application.Features.Memory.Documents.IngestDocumentMemory;
 using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Application.Features.Memory.Items.ListItems;
 using Platform.Application.Features.Memory.Legacy.Insights;
@@ -46,6 +47,7 @@ public static class MemoryApplicationServiceCollectionExtensions
             .AddScoped<GetProfileMemoryQueryHandler>()
             .AddScoped<UpdateProfileMemoryCommandHandler>()
             .AddScoped<PostMemoryContextRequestHandler>()
+            .AddScoped<IngestDocumentMemoryCommandHandler>()
             .AddScoped<CreateSemanticMemoryCommandHandler>()
             .AddScoped<UpdateSemanticMemoryConfidenceCommandHandler>()
             .AddScoped<AttachSemanticMemoryEvidenceCommandHandler>()

@@ -16,6 +16,8 @@ public sealed class EfMemoryVectorRecallSearch(PlatformDbContext db) : IMemoryVe
         float[] queryEmbedding,
         string embeddingModelKey,
         int take,
+        string? restrictDocumentRecallToProjectId = null,
+        string? restrictDocumentRecallToDomain = null,
         CancellationToken cancellationToken = default)
     {
         if (take <= 0 || queryEmbedding.Length == 0)
@@ -35,6 +37,13 @@ public sealed class EfMemoryVectorRecallSearch(PlatformDbContext db) : IMemoryVe
         }
 
         var qv = new Vector(queryEmbedding);
+        var restrictProject = string.IsNullOrWhiteSpace(restrictDocumentRecallToProjectId)
+            ? null
+            : restrictDocumentRecallToProjectId.Trim();
+        var restrictDomain = string.IsNullOrWhiteSpace(restrictDocumentRecallToDomain)
+            ? null
+            : restrictDocumentRecallToDomain.Trim();
+
         var rows = await (
                 from e in db.MemoryEmbeddings.AsNoTracking()
                 join m in db.MemoryItems.AsNoTracking() on e.MemoryItemId equals m.Id
@@ -42,15 +51,28 @@ public sealed class EfMemoryVectorRecallSearch(PlatformDbContext db) : IMemoryVe
                     m.UserId == userId &&
                     e.EmbeddingModelKey == embeddingModelKey &&
                     e.Dimensions == queryEmbedding.Length &&
-                    m.Status == MemoryItemStatus.Active
+                    m.Status == MemoryItemStatus.Active &&
+                    (m.MemoryType != MemoryItemType.Document ||
+                        restrictProject == null ||
+                        m.ProjectId == null ||
+                        m.ProjectId == restrictProject) &&
+                    (m.MemoryType != MemoryItemType.Document ||
+                        restrictDomain == null ||
+                        m.Domain == null ||
+                        m.Domain == restrictDomain)
                 orderby e.Embedding!.CosineDistance(qv)
                 select new
                 {
                     e.MemoryItemId,
+                    e.ChunkIndex,
+                    e.EmbeddedText,
                     m.MemoryType,
                     m.Title,
                     m.Content,
                     m.AuthorityWeight,
+                    m.ProjectId,
+                    m.Domain,
+                    m.SourceType,
                     e.EmbeddingModelKey,
                     Dist = e.Embedding!.CosineDistance(qv),
                 })
@@ -71,7 +93,7 @@ public sealed class EfMemoryVectorRecallSearch(PlatformDbContext db) : IMemoryVe
                 sim = 1;
             }
 
-            var preview = r.Content;
+            var preview = string.IsNullOrEmpty(r.EmbeddedText) ? r.Content : r.EmbeddedText;
             if (!string.IsNullOrEmpty(preview) && preview.Length > 400)
             {
                 preview = preview.Substring(0, 400) + "…";
@@ -80,12 +102,16 @@ public sealed class EfMemoryVectorRecallSearch(PlatformDbContext db) : IMemoryVe
             hits.Add(
                 new MemoryVectorRecallHit(
                     r.MemoryItemId,
+                    r.ChunkIndex,
                     r.MemoryType.ToString(),
                     r.Title,
                     preview ?? "",
                     sim,
                     r.AuthorityWeight,
-                    r.EmbeddingModelKey));
+                    r.EmbeddingModelKey,
+                    r.ProjectId,
+                    r.Domain,
+                    r.SourceType ?? ""));
         }
 
         return hits;

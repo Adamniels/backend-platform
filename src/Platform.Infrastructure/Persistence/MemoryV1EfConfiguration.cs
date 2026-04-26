@@ -46,6 +46,8 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.Content).HasColumnType("text");
             e.Property(x => x.StructuredJson).HasColumnType("jsonb");
             e.Property(x => x.SourceType).HasMaxLength(64);
+            e.Property(x => x.ProjectId).HasMaxLength(256);
+            e.Property(x => x.Domain).HasMaxLength(256);
 
             e.HasOne(x => x.User)
                 .WithMany()
@@ -55,6 +57,8 @@ public static class MemoryV1EfConfiguration
             e.HasIndex(x => x.UserId).HasDatabaseName("ix_memory_items_user_id");
             e.HasIndex(x => new { x.UserId, x.Status }).HasDatabaseName("ix_memory_items_user_id_status");
             e.HasIndex(x => new { x.UserId, x.MemoryType }).HasDatabaseName("ix_memory_items_user_id_memory_type");
+            e.HasIndex(x => new { x.UserId, x.ProjectId }).HasDatabaseName("ix_memory_items_user_id_project_id");
+            e.HasIndex(x => new { x.UserId, x.Domain }).HasDatabaseName("ix_memory_items_user_id_domain");
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_memory_items_created_at");
         });
 
@@ -214,11 +218,12 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.EmbeddingModelKey).HasMaxLength(256);
             e.Property(x => x.EmbeddingModelVersion).HasMaxLength(64);
             e.Property(x => x.ContentSha256).HasMaxLength(64);
+            e.Property(x => x.EmbeddedText).HasColumnType("text");
             e.Property(x => x.Embedding)
                 .HasColumnType($"vector({MemoryVectorRecallConstants.EmbeddingDimensions})");
-            e.HasIndex(x => new { x.UserId, x.MemoryItemId, x.EmbeddingModelKey })
+            e.HasIndex(x => new { x.UserId, x.MemoryItemId, x.EmbeddingModelKey, x.ChunkIndex })
                 .IsUnique()
-                .HasDatabaseName("ix_memory_embeddings_user_item_model");
+                .HasDatabaseName("ix_memory_embeddings_user_item_model_chunk");
             e.HasOne(x => x.MemoryItem)
                 .WithMany()
                 .HasForeignKey(x => x.MemoryItemId)

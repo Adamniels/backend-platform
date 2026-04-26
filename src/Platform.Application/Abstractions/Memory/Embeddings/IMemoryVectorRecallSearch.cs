@@ -8,5 +8,7 @@ public interface IMemoryVectorRecallSearch
         float[] queryEmbedding,
         string embeddingModelKey,
         int take,
+        string? restrictDocumentRecallToProjectId = null,
+        string? restrictDocumentRecallToDomain = null,
         CancellationToken cancellationToken = default);
 }

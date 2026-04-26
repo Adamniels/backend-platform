@@ -391,16 +391,23 @@ public sealed class EfMemoryContextProvider(
                         queryEmbedding,
                         embeddingGenerator.ModelKey,
                         16,
+                        request.ProjectId,
+                        request.Domain,
                         cancellationToken)
                     .ConfigureAwait(false);
                 foreach (var h in hits)
                 {
                     var rank = MemoryValueConstraints.Clamp01(
                         0.55d * h.CosineSimilarity + 0.45d * h.AuthorityWeight);
+                    var isDoc = string.Equals(
+                        h.MemoryType,
+                        nameof(MemoryItemType.Document),
+                        StringComparison.OrdinalIgnoreCase);
                     vectorRecallDtos.Add(
                         new MemoryItemVectorRecallV1Dto
                         {
                             MemoryItemId = h.MemoryItemId,
+                            ChunkIndex = h.ChunkIndex,
                             MemoryType = h.MemoryType,
                             Title = h.Title,
                             ContentPreview = h.ContentPreview,
@@ -408,6 +415,10 @@ public sealed class EfMemoryContextProvider(
                             AuthorityWeight = h.AuthorityWeight,
                             RankScore = rank,
                             EmbeddingModelKey = h.EmbeddingModelKey,
+                            IsDocumentEvidence = isDoc,
+                            ProjectId = h.ProjectId,
+                            Domain = h.Domain,
+                            SourceType = h.SourceType,
                         });
                 }
 

@@ -15,7 +15,7 @@ public static class MemoryEmbeddingsV1Routes
                     IMemoryEmbeddingUpsertService upsert,
                     CancellationToken ct) =>
                 {
-                    var id = await upsert
+                    var outcome = await upsert
                         .UpsertForMemoryItemAsync(
                             body.UserId ?? 0,
                             body.MemoryItemId,
@@ -24,7 +24,11 @@ public static class MemoryEmbeddingsV1Routes
                             ct)
                         .ConfigureAwait(false);
                     return Results.Json(
-                        new UpsertMemoryEmbeddingV1Response { EmbeddingRowId = id },
+                        new UpsertMemoryEmbeddingV1Response
+                        {
+                            EmbeddingRowId = outcome.FirstEmbeddingRowId,
+                            ChunksWritten = outcome.ChunksWritten,
+                        },
                         statusCode: StatusCodes.Status200OK);
                 })
             .DisableAntiforgery();

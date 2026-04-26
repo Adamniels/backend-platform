@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Platform.Application.Abstractions.Memory.Consolidation;
+using Platform.Application.Abstractions.Memory.Documents;
 using Platform.Application.Abstractions.Memory.Context;
 using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Abstractions.Memory.Events;
@@ -15,6 +16,7 @@ using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Embeddings;
 using Platform.Infrastructure.Features.Memory.Consolidation;
+using Platform.Infrastructure.Features.Memory.Documents;
 using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Embeddings;
 using Platform.Infrastructure.Features.Memory.Events;
@@ -36,6 +38,8 @@ public static class MemoryInfrastructureServiceCollectionExtensions
     {
         services.AddOptions<MemoryVectorRetrievalOptions>()
             .Bind(configuration.GetSection(MemoryVectorRetrievalOptions.SectionName));
+        services.AddOptions<DocumentMemoryChunkingOptions>()
+            .Bind(configuration.GetSection("DocumentMemory"));
         return services
             .AddSingleton<IMemoryEmbeddingGenerator>(
                 sp =>
@@ -53,6 +57,7 @@ public static class MemoryInfrastructureServiceCollectionExtensions
                 })
             .AddScoped<IMemoryVectorRecallSearch, EfMemoryVectorRecallSearch>()
             .AddScoped<IMemoryEmbeddingUpsertService, EfMemoryEmbeddingUpsertService>()
+            .AddScoped<IDocumentMemoryIngestService, EfDocumentMemoryIngestService>()
             .AddScoped<ILegacyMemoryInsightsReadRepository, LegacyMemoryInsightsReadRepository>()
             .AddScoped<IMemoryEventWriter, EfMemoryEventWriter>()
             .AddScoped<IMemoryEventsReadRepository, EfMemoryEventsReadRepository>()
