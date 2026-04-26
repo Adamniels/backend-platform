@@ -1,5 +1,7 @@
 # backend-platform
 
+Architecture, standards, and how to extend the API: **[docs/README.md](docs/README.md)** (start with [docs/backend-standards.md](docs/backend-standards.md)).
+
 ## Postgres via Docker
 
 Start Postgres:
