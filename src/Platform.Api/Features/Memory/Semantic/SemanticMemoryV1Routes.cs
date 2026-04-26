@@ -5,6 +5,7 @@ using Platform.Application.Features.Memory.Semantic.CreateSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.FindSimilarSemanticMemories;
 using Platform.Application.Features.Memory.Semantic.GetSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.ListSemanticMemories;
+using Platform.Application.Features.Memory.Semantic.ListSemanticMemoryEvidence;
 using Platform.Application.Features.Memory.Semantic.RejectSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.UpdateSemanticMemoryConfidence;
 using Platform.Contracts.V1.Memory;
@@ -57,6 +58,25 @@ public static class SemanticMemoryV1Routes
             {
                 var res = await h
                     .HandleAsync(new GetSemanticMemoryQuery(id, userId ?? 0), ct)
+                    .ConfigureAwait(false);
+                return res is null
+                    ? Results.NotFound()
+                    : Results.Ok(res);
+            });
+
+        v1.MapGet(
+            "memory/semantics/{id:long}/evidence",
+            async (
+                long id,
+                int? userId,
+                int? take,
+                ListSemanticMemoryEvidenceQueryHandler h,
+                CancellationToken ct) =>
+            {
+                var res = await h
+                    .HandleAsync(
+                        new ListSemanticMemoryEvidenceQuery(userId ?? 0, id, take ?? 32),
+                        ct)
                     .ConfigureAwait(false);
                 return res is null
                     ? Results.NotFound()

@@ -10,4 +10,10 @@ public interface IMemoryEventsReadRepository
         DateTimeOffset endExclusive,
         int maxTake,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Most recent events first (for user-facing timeline).</summary>
+    Task<IReadOnlyList<MemoryEvent>> ListRecentForUserAsync(
+        int userId,
+        int take,
+        CancellationToken cancellationToken = default);
 }

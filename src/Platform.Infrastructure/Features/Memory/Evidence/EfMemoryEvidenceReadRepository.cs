@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.Application.Abstractions.Memory.Evidence;
+using Platform.Contracts.V1.Memory;
 using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Evidence;
@@ -16,4 +17,32 @@ public sealed class EfMemoryEvidenceReadRepository(PlatformDbContext db) : IMemo
             .AnyAsync(
                 e => e.UserId == userId && e.SemanticMemoryId == semanticMemoryId && e.EventId == eventId,
                 cancellationToken);
+
+    public async Task<IReadOnlyList<SemanticMemoryEvidenceV1Item>> ListForSemanticAsync(
+        int userId,
+        long semanticMemoryId,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var n = Math.Clamp(take, 1, 100);
+        var rows = await (
+                from e in db.MemoryEvidences.AsNoTracking()
+                join ev in db.MemoryEvents.AsNoTracking() on e.EventId equals ev.Id
+                where e.UserId == userId &&
+                    e.SemanticMemoryId == semanticMemoryId &&
+                    ev.UserId == userId
+                orderby ev.OccurredAt descending, e.Id descending
+                select new SemanticMemoryEvidenceV1Item
+                {
+                    EventId = ev.Id,
+                    EventType = ev.EventType,
+                    Strength = e.Strength,
+                    Note = e.Reason,
+                    OccurredAt = ev.OccurredAt,
+                })
+            .Take(n)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return rows;
+    }
 }

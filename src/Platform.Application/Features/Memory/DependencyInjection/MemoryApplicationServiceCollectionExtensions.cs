@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Features.Memory.Context.GetMemoryContextShell;
 using Platform.Application.Features.Memory.Context.GetMemoryContextV1;
+using Platform.Application.Features.Memory.Events.ListMemoryEvents;
 using Platform.Application.Features.Memory.Documents.IngestDocumentMemory;
 using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Application.Features.Memory.Items.ListItems;
@@ -22,6 +23,7 @@ using Platform.Application.Features.Memory.ReviewQueue.RejectItem;
 using Platform.Application.Features.Memory.Semantic.ArchiveSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.AttachSemanticMemoryEvidence;
 using Platform.Application.Features.Memory.Semantic.CreateSemanticMemory;
+using Platform.Application.Features.Memory.Semantic.ListSemanticMemoryEvidence;
 using Platform.Application.Features.Memory.Semantic.FindSimilarSemanticMemories;
 using Platform.Application.Features.Memory.Semantic.GetSemanticMemory;
 using Platform.Application.Features.Memory.Semantic.ListSemanticMemories;
@@ -37,6 +39,8 @@ public static class MemoryApplicationServiceCollectionExtensions
         services
             .AddScoped<ListMemoryInsightsQueryHandler>()
             .AddScoped<IngestMemoryEventCommandHandler>()
+            .AddScoped<ListMemoryEventsQueryHandler>()
+            .AddScoped<ListSemanticMemoryEvidenceQueryHandler>()
             .AddScoped<ListMemoryItemsQueryHandler>()
             .AddScoped<GetMemoryContextQueryHandler>()
             .AddScoped<ListMemoryReviewQueueQueryHandler>()

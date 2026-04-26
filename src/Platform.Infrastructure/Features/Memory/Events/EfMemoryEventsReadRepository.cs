@@ -24,4 +24,20 @@ public sealed class EfMemoryEventsReadRepository(PlatformDbContext db) : IMemory
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public async Task<IReadOnlyList<MemoryEvent>> ListRecentForUserAsync(
+        int userId,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var n = Math.Clamp(take, 1, 200);
+        return await db.MemoryEvents
+            .AsNoTracking()
+            .Where(e => e.UserId == userId)
+            .OrderByDescending(e => e.OccurredAt)
+            .ThenByDescending(e => e.Id)
+            .Take(n)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
 }
