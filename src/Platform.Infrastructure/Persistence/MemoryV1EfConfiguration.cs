@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Platform.Application.Features.Memory.Embeddings;
 using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Infrastructure.Persistence;
@@ -7,6 +8,7 @@ public static class MemoryV1EfConfiguration
 {
     public static void ConfigureMemoryV1(this ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("vector");
         var seedT = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         modelBuilder.Entity<MemoryUser>(e =>
@@ -203,6 +205,28 @@ public static class MemoryV1EfConfiguration
             e.HasIndex(x => new { x.UserId, x.ToEntity }).HasDatabaseName("ix_memory_relationships_user_id_to");
             e.HasIndex(x => new { x.UserId, x.RelationType })
                 .HasDatabaseName("ix_memory_relationships_user_id_relation_type");
+        });
+
+        modelBuilder.Entity<MemoryEmbedding>(e =>
+        {
+            e.ToTable("memory_embeddings");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.EmbeddingModelKey).HasMaxLength(256);
+            e.Property(x => x.EmbeddingModelVersion).HasMaxLength(64);
+            e.Property(x => x.ContentSha256).HasMaxLength(64);
+            e.Property(x => x.Embedding)
+                .HasColumnType($"vector({MemoryVectorRecallConstants.EmbeddingDimensions})");
+            e.HasIndex(x => new { x.UserId, x.MemoryItemId, x.EmbeddingModelKey })
+                .IsUnique()
+                .HasDatabaseName("ix_memory_embeddings_user_item_model");
+            e.HasOne(x => x.MemoryItem)
+                .WithMany()
+                .HasForeignKey(x => x.MemoryItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -1,4 +1,5 @@
 using Platform.Api.Features.Memory.Context;
+using Platform.Api.Features.Memory.Embeddings;
 using Platform.Api.Features.Memory.Events;
 using Platform.Api.Features.Memory.Legacy.Insights;
 using Platform.Api.Features.Memory.Module;
@@ -16,6 +17,7 @@ public static class MemoryV1Routes
         MemoryModuleV1Routes.Map(v1);
         MemoryEventsV1Routes.Map(v1);
         MemoryContextV1Routes.Map(v1);
+        MemoryEmbeddingsV1Routes.Map(v1);
         MemoryReviewV1Routes.Map(v1);
         ProfileMemoryV1Routes.Map(v1);
         SemanticMemoryV1Routes.Map(v1);

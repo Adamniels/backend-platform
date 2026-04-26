@@ -1,6 +1,6 @@
 namespace Platform.Contracts.V1.Memory;
 
-/// <summary>Curated memory packet for agents/workflows (v1: SQL + in-memory rank; no vectors/graph).</summary>
+/// <summary>Curated memory packet for agents/workflows (v1: SQL + in-memory rank + optional pgvector recall).</summary>
 public sealed class MemoryContextV1Dto
 {
     public IReadOnlyList<ProfileFactV1Dto> ProfileFacts { get; set; } = Array.Empty<ProfileFactV1Dto>();
@@ -11,6 +11,11 @@ public sealed class MemoryContextV1Dto
     public IReadOnlyList<ProceduralRuleContextV1Dto> ProceduralRules { get; set; } = Array.Empty<ProceduralRuleContextV1Dto>();
     public IReadOnlyList<MemoryConflictV1Dto> Conflicts { get; set; } = Array.Empty<MemoryConflictV1Dto>();
     public IReadOnlyList<MemoryWarningV1Dto> Warnings { get; set; } = Array.Empty<MemoryWarningV1Dto>();
+    /// <summary>pgvector-backed hits; each row maps to <c>memory_items</c> (including document-typed items).</summary>
+    public IReadOnlyList<MemoryItemVectorRecallV1Dto> MemoryItemVectorRecalls { get; set; } =
+        Array.Empty<MemoryItemVectorRecallV1Dto>();
+
+    public bool VectorRecallUsed { get; set; }
     public string AssemblyStage { get; set; } = "v1-sql";
 }
 
@@ -21,6 +26,21 @@ public sealed class GetMemoryContextV1Request
     public string? WorkflowType { get; set; }
     public string? ProjectId { get; set; }
     public string? Domain { get; set; }
+
+    /// <summary>When false, skips pgvector recall even if embeddings exist. Default is true when omitted.</summary>
+    public bool? IncludeVectorRecall { get; set; }
+}
+
+public sealed class MemoryItemVectorRecallV1Dto
+{
+    public long MemoryItemId { get; set; }
+    public string MemoryType { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string ContentPreview { get; set; } = "";
+    public double CosineSimilarity { get; set; }
+    public double AuthorityWeight { get; set; }
+    public double RankScore { get; set; }
+    public string EmbeddingModelKey { get; set; } = "";
 }
 
 public sealed class ProfileFactV1Dto

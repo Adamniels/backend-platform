@@ -30,6 +30,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<MemoryConsolidationRun> MemoryConsolidationRuns => Set<MemoryConsolidationRun>();
     public DbSet<MemoryRelationship> MemoryRelationships => Set<MemoryRelationship>();
     public DbSet<ExplicitUserProfile> ExplicitUserProfiles => Set<ExplicitUserProfile>();
+    public DbSet<MemoryEmbedding> MemoryEmbeddings => Set<MemoryEmbedding>();
     public DbSet<InputNeededItem> InputNeededItems => Set<InputNeededItem>();
     public DbSet<StatsSnapshot> StatsSnapshots => Set<StatsSnapshot>();
 

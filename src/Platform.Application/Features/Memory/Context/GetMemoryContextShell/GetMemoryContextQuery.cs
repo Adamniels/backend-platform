@@ -5,4 +5,5 @@ public readonly record struct GetMemoryContextQuery(
     string? TaskDescription = null,
     string? WorkflowType = null,
     string? ProjectId = null,
-    string? Domain = null);
+    string? Domain = null,
+    bool IncludeVectorRecall = true);

@@ -16,7 +16,8 @@ public sealed class GetMemoryContextQueryHandler(IMemoryContextProvider provider
             query.TaskDescription,
             query.WorkflowType,
             query.ProjectId,
-            query.Domain);
+            query.Domain,
+            query.IncludeVectorRecall);
 
         return await provider.GetContextAsync(request, cancellationToken).ConfigureAwait(false);
     }

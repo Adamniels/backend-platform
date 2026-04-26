@@ -1,6 +1,7 @@
 services:
+  # pgvector-enabled Postgres (required for memory_embeddings / vector migrations).
   postgres:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     container_name: platform-postgres
     restart: unless-stopped
     environment:

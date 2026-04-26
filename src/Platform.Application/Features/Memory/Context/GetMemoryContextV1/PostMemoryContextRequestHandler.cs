@@ -20,7 +20,8 @@ public sealed class PostMemoryContextRequestHandler(
                     request.TaskDescription,
                     request.WorkflowType,
                     request.ProjectId,
-                    request.Domain),
+                    request.Domain,
+                    request.IncludeVectorRecall ?? true),
                 cancellationToken)
             .ConfigureAwait(false);
     }

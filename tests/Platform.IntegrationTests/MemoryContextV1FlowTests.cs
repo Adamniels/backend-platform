@@ -48,6 +48,7 @@ public sealed class MemoryContextV1FlowTests(PlatformWebApplicationFactory facto
             new GetMemoryContextV1Request
             {
                 TaskDescription = $"plan work on {unique} and temporal",
+                IncludeVectorRecall = false,
             });
         res.EnsureSuccessStatusCode();
         var body = await res.Content.ReadFromJsonAsync<MemoryContextV1Dto>(JsonReadOptions);

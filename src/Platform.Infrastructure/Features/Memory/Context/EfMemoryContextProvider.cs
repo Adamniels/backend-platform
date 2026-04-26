@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.Application.Abstractions.Memory.Context;
+using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Features.Memory.Context;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
@@ -8,7 +9,10 @@ using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Context;
 
-public sealed class EfMemoryContextProvider(PlatformDbContext db) : IMemoryContextProvider
+public sealed class EfMemoryContextProvider(
+    PlatformDbContext db,
+    IMemoryEmbeddingGenerator embeddingGenerator,
+    IMemoryVectorRecallSearch vectorRecallSearch) : IMemoryContextProvider
 {
     public async Task<MemoryContextV1Dto> GetContextAsync(
         MemoryContextRequest request,
@@ -346,6 +350,72 @@ public sealed class EfMemoryContextProvider(PlatformDbContext db) : IMemoryConte
                 .ToList();
         }
 
+        if (request.IncludeVectorRecall &&
+            !string.IsNullOrWhiteSpace(request.TaskDescription) &&
+            embeddingGenerator.Dimensions <= 0)
+        {
+            warnings.Add(
+                new MemoryWarningV1Dto
+                {
+                    Code = "vector_recall_disabled",
+                    Message =
+                        "Vector recall is enabled but no embedding generator is configured (set MemoryVector:UseDeterministicEmbeddingGenerator or plug a real model).",
+                });
+        }
+
+        var vectorRecallDtos = new List<MemoryItemVectorRecallV1Dto>();
+        var vectorRecallUsed = false;
+        var assemblyStage = "v1-sql";
+        if (request.IncludeVectorRecall &&
+            !string.IsNullOrWhiteSpace(request.TaskDescription) &&
+            embeddingGenerator.Dimensions > 0)
+        {
+            var queryEmbedding = await embeddingGenerator
+                .TryEmbedRecallQueryAsync(request.TaskDescription, cancellationToken)
+                .ConfigureAwait(false);
+            if (queryEmbedding is null)
+            {
+                warnings.Add(
+                    new MemoryWarningV1Dto
+                    {
+                        Code = "vector_recall_unavailable",
+                        Message =
+                            "Vector recall was requested but no embedding could be produced (generator not configured or empty input).",
+                    });
+            }
+            else
+            {
+                var hits = await vectorRecallSearch
+                    .SearchMemoryItemsAsync(
+                        userId,
+                        queryEmbedding,
+                        embeddingGenerator.ModelKey,
+                        16,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                foreach (var h in hits)
+                {
+                    var rank = MemoryValueConstraints.Clamp01(
+                        0.55d * h.CosineSimilarity + 0.45d * h.AuthorityWeight);
+                    vectorRecallDtos.Add(
+                        new MemoryItemVectorRecallV1Dto
+                        {
+                            MemoryItemId = h.MemoryItemId,
+                            MemoryType = h.MemoryType,
+                            Title = h.Title,
+                            ContentPreview = h.ContentPreview,
+                            CosineSimilarity = h.CosineSimilarity,
+                            AuthorityWeight = h.AuthorityWeight,
+                            RankScore = rank,
+                            EmbeddingModelKey = h.EmbeddingModelKey,
+                        });
+                }
+
+                vectorRecallUsed = vectorRecallDtos.Count > 0;
+                assemblyStage = "v1-sql+vector";
+            }
+        }
+
         return new MemoryContextV1Dto
         {
             ProfileFacts = profileFacts.OrderByDescending(
@@ -358,7 +428,9 @@ public sealed class EfMemoryContextProvider(PlatformDbContext db) : IMemoryConte
             ProceduralRules = ruleDtos,
             Conflicts = conflicts,
             Warnings = warnings,
-            AssemblyStage = "v1-sql",
+            MemoryItemVectorRecalls = vectorRecallDtos,
+            VectorRecallUsed = vectorRecallUsed,
+            AssemblyStage = assemblyStage,
         };
     }
 

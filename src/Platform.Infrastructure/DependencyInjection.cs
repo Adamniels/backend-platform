@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Abstractions.Access;
@@ -30,13 +31,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPlatformInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddPlatformMemoryInfrastructure();
+        services.AddPlatformMemoryInfrastructure(configuration);
 
         var connectionString = configuration.GetConnectionString("Default")
                                ?? "Host=localhost;Port=5432;Database=platform;Username=platform;Password=platform";
 
-        services.AddDbContext<PlatformDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddDbContext<PlatformDbContext>(
+            options => options.UseNpgsql(connectionString, o => o.UseVector()));
 
         services.AddSingleton<IWorkflowStartOptions, WorkflowStartOptions>();
         services.AddScoped<IAccessKeyValidationService, AccessKeyValidationService>();
