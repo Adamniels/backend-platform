@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Platform.IntegrationTests;
 
+[Collection("integration memory")]
 public sealed class MemoryEventIngestionFlowTests(PlatformWebApplicationFactory factory) : IClassFixture<PlatformWebApplicationFactory>
 {
     private static readonly JsonSerializerOptions JsonReadOptions = new() { PropertyNameCaseInsensitive = true };
