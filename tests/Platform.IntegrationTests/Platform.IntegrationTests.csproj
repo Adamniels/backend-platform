@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Platform.Api\Platform.Api.csproj" />
+    <ProjectReference Include="..\..\src\Platform.Contracts\Platform.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

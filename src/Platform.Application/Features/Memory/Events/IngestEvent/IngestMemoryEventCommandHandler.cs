@@ -1,15 +1,22 @@
+using FluentValidation;
 using Platform.Application.Abstractions.Memory.Events;
+using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory.ValueObjects;
 
 namespace Platform.Application.Features.Memory.Events.IngestEvent;
 
-public sealed class IngestMemoryEventCommandHandler(IMemoryEventWriter events)
+public sealed class IngestMemoryEventCommandHandler(
+    IValidator<IngestMemoryEventCommand> validator,
+    IMemoryEventWriter events)
 {
-    public async Task HandleAsync(
+    public async Task<MemoryEventCreatedV1Dto> HandleAsync(
         IngestMemoryEventCommand command,
         CancellationToken cancellationToken = default)
     {
-        var now = DateTimeOffset.UtcNow;
+        await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
+
+        var systemNow = DateTimeOffset.UtcNow;
+        var occurred = command.OccurredAt ?? systemNow;
         var ev = UncommittedMemoryEvent.CreateForIngest(
             command.ResolvedUserId,
             command.EventType,
@@ -17,9 +24,10 @@ public sealed class IngestMemoryEventCommandHandler(IMemoryEventWriter events)
             command.WorkflowId,
             command.ProjectId,
             command.PayloadJson,
-            now,
-            now);
+            occurred,
+            systemNow);
 
-        await events.WriteAsync(ev, cancellationToken).ConfigureAwait(false);
+        var result = await events.WriteAsync(ev, cancellationToken).ConfigureAwait(false);
+        return new MemoryEventCreatedV1Dto(result.Id, result.OccurredAt, result.CreatedAt);
     }
 }

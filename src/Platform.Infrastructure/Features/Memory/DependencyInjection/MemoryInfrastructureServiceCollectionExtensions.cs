@@ -7,6 +7,7 @@ using Platform.Application.Abstractions.Memory.Profile;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Infrastructure.Features.Memory.Events;
 using Platform.Infrastructure.Features.Memory.Legacy;
 using Platform.Infrastructure.Features.Memory.Stubs;
 
@@ -18,7 +19,7 @@ public static class MemoryInfrastructureServiceCollectionExtensions
         this IServiceCollection services) =>
         services
             .AddScoped<ILegacyMemoryInsightsReadRepository, LegacyMemoryInsightsReadRepository>()
-            .AddScoped<IMemoryEventWriter, NoOpMemoryEventWriter>()
+            .AddScoped<IMemoryEventWriter, EfMemoryEventWriter>()
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, SemanticMemoryReadRepositoryStub>()
             .AddScoped<IProceduralRuleReadRepository, ProceduralRuleReadRepositoryStub>()

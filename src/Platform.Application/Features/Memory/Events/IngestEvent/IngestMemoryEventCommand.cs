@@ -8,7 +8,8 @@ public sealed record IngestMemoryEventCommand(
     string? WorkflowId = null,
     string? ProjectId = null,
     string? PayloadJson = null,
-    int UserId = 0)
+    int UserId = 0,
+    DateTimeOffset? OccurredAt = null)
 {
     public int ResolvedUserId => UserId == 0
         ? MemoryUser.DefaultId
