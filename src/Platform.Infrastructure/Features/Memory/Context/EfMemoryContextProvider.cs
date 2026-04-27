@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Platform.Application.Abstractions.Memory.Contradictions;
 using Platform.Application.Abstractions.Memory.Context;
 using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Features.Memory.Context;
@@ -15,6 +16,7 @@ public sealed class EfMemoryContextProvider(
     PlatformDbContext db,
     IMemoryEmbeddingGenerator embeddingGenerator,
     IMemoryVectorRecallSearch vectorRecallSearch,
+    IExplicitProfileConflictDetector explicitProfileConflictDetector,
     ILogger<EfMemoryContextProvider> logger) : IMemoryContextProvider
 {
     public async Task<MemoryContextV1Dto> GetContextAsync(
@@ -163,14 +165,14 @@ public sealed class EfMemoryContextProvider(
             .ConfigureAwait(false);
 
         var semanticIds = semanticsIn.Select(s => s.Id).ToList();
-        Dictionary<long, (int Count, IReadOnlyList<long> TopEventIds)> evidenceBySemantic = new();
+        Dictionary<long, (int Count, int Contradictions, IReadOnlyList<long> TopEventIds)> evidenceBySemantic = new();
         if (semanticIds.Count > 0)
         {
             var linkRows = await (
                     from ev in db.MemoryEvidences.AsNoTracking()
                     join e in db.MemoryEvents.AsNoTracking() on ev.EventId equals e.Id
                     where ev.UserId == userId && semanticIds.Contains(ev.SemanticMemoryId)
-                    select new { ev.SemanticMemoryId, ev.EventId, e.OccurredAt })
+                    select new { ev.SemanticMemoryId, ev.EventId, e.OccurredAt, ev.Polarity })
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
             foreach (var g in linkRows.GroupBy(x => x.SemanticMemoryId))
@@ -180,7 +182,11 @@ public sealed class EfMemoryContextProvider(
                     .Distinct()
                     .Take(8)
                     .ToList();
-                evidenceBySemantic[g.Key] = (g.Count(), topIds);
+                var contradictions = g.Count(
+                    x => x.Polarity is MemoryEvidencePolarity.Contradict
+                        or MemoryEvidencePolarity.WeakContradict
+                        or MemoryEvidencePolarity.Supersede);
+                evidenceBySemantic[g.Key] = (g.Count(), contradictions, topIds);
             }
         }
 
@@ -189,6 +195,7 @@ public sealed class EfMemoryContextProvider(
         {
             _ = evidenceBySemantic.TryGetValue(s.Id, out var evPack);
             var evidenceCount = evPack.Count;
+            var contradictionCount = evPack.Contradictions;
             var supportingIds = evPack.TopEventIds ?? Array.Empty<long>();
             if (evidenceCount == 0)
             {
@@ -214,6 +221,10 @@ public sealed class EfMemoryContextProvider(
                 tm,
                 dm,
                 st);
+            if (contradictionCount > 0)
+            {
+                rank *= Math.Max(0.55d, 1d - contradictionCount * 0.08d);
+            }
             semanticDtos.Add(
                 new SemanticMemoryContextV1Dto
                 {
@@ -338,6 +349,36 @@ public sealed class EfMemoryContextProvider(
             .ToList();
 
         var conflicts = new List<MemoryConflictV1Dto>();
+        var explicitConflicts = explicitProfileConflictDetector.Detect(profile, semanticsIn);
+        foreach (var c in explicitConflicts)
+        {
+            conflicts.Add(
+                new MemoryConflictV1Dto
+                {
+                    Kind = "explicit_profile_conflict",
+                    Summary = $"Semantic memory conflicts with explicit {c.Kind}: {c.ExplicitText}.",
+                    RelatedEntityIds = [c.SemanticMemoryId.ToString()],
+                    Severity = "Review",
+                    AgainstExplicitProfile = true,
+                    Confidence = c.Confidence,
+                    AuthorityWeight = c.AuthorityWeight,
+                });
+        }
+
+        foreach (var s in semanticDtos.Where(x => evidenceBySemantic.TryGetValue(x.Id, out var ev) && ev.Contradictions > 0))
+        {
+            conflicts.Add(
+                new MemoryConflictV1Dto
+                {
+                    Kind = "contradicting_evidence",
+                    Summary = $"Semantic memory «{s.Key}» has contradicting evidence.",
+                    RelatedEntityIds = [s.Id.ToString()],
+                    Severity = "Review",
+                    Confidence = s.Confidence,
+                    AuthorityWeight = s.AuthorityWeight,
+                });
+        }
+
         var semByKey = semanticsIn.GroupBy(
                 s => s.Key.Trim()
                     .ToLowerInvariant())
@@ -362,6 +403,7 @@ public sealed class EfMemoryContextProvider(
                     RelatedEntityIds = g.Select(
                             x => x.Id.ToString())
                         .ToList(),
+                    Severity = "Review",
                 });
         }
 

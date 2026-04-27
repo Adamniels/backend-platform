@@ -22,6 +22,10 @@ public sealed class NightlyMemoryConsolidationV1Response
     public int ProcessedEventsCount { get; set; }
     public int ProposalsCreatedCount { get; set; }
     public int AutoUpdatesCount { get; set; }
+    public int RecomputedSemanticsCount { get; set; }
+    public int StaleProposalsCreatedCount { get; set; }
+    public int ContradictionProposalsCreatedCount { get; set; }
+    public int MergeProposalsCreatedCount { get; set; }
     public string? Error { get; set; }
     public bool FromCache { get; set; }
 }

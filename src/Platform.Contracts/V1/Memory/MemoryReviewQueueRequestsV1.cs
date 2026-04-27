@@ -20,6 +20,33 @@ public sealed class NewSemanticMemoryProposalV1
     public double InitialConfidence { get; set; } = 0.65d;
 }
 
+public sealed class ContradictionDetectedProposalV1
+{
+    public long SemanticMemoryId { get; set; }
+    public string Key { get; set; } = "";
+    public string Claim { get; set; } = "";
+    public double Confidence { get; set; }
+    public double SupportScore { get; set; }
+    public double ContradictionScore { get; set; }
+}
+
+public sealed class ArchiveStaleSemanticProposalV1
+{
+    public long SemanticMemoryId { get; set; }
+    public string Key { get; set; } = "";
+    public string Claim { get; set; } = "";
+    public double CurrentConfidence { get; set; }
+    public DateTimeOffset? LastSupportedAt { get; set; }
+}
+
+public sealed class MergeSemanticCandidatesProposalV1
+{
+    public IReadOnlyList<long> SourceSemanticIds { get; set; } = Array.Empty<long>();
+    public long CanonicalSemanticId { get; set; }
+    public string ResultingClaim { get; set; } = "";
+    public string? Domain { get; set; }
+}
+
 public sealed class ApproveMemoryReviewQueueItemV1Request
 {
     public string? ReviewNotes { get; set; }

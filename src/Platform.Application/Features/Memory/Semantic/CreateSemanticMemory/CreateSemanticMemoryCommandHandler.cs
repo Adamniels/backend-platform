@@ -33,6 +33,12 @@ public sealed class CreateSemanticMemoryCommandHandler(
                 command.EventId,
                 command.EvidenceStrength,
                 command.EvidenceReason,
+                SemanticEvidenceContractParser.ParsePolarity(command.EvidencePolarity),
+                SemanticEvidenceContractParser.ParseSourceKind(command.EvidenceSourceKind),
+                command.EvidenceReliabilityWeight ?? 0.55d,
+                command.EvidenceSourceId,
+                command.EvidenceSchemaVersion,
+                command.EvidenceProvenanceJson,
                 cancellationToken)
             .ConfigureAwait(false);
         return created.ToV1Dto();

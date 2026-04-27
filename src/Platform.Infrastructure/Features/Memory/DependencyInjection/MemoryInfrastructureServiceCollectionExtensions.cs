@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Platform.Application.Abstractions.Memory.Consolidation;
+using Platform.Application.Abstractions.Memory.Confidence;
+using Platform.Application.Abstractions.Memory.Contradictions;
 using Platform.Application.Abstractions.Memory.Documents;
 using Platform.Application.Abstractions.Memory.Context;
 using Platform.Application.Abstractions.Memory.Embeddings;
@@ -10,18 +12,22 @@ using Platform.Application.Abstractions.Memory.Events;
 using Platform.Application.Abstractions.Memory.Evidence;
 using Platform.Application.Abstractions.Memory.Items;
 using Platform.Application.Abstractions.Memory.Legacy;
+using Platform.Application.Abstractions.Memory.Maintenance;
 using Platform.Application.Abstractions.Memory.Profile;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Embeddings;
 using Platform.Infrastructure.Features.Memory.Consolidation;
+using Platform.Infrastructure.Features.Memory.Confidence;
+using Platform.Infrastructure.Features.Memory.Contradictions;
 using Platform.Infrastructure.Features.Memory.Documents;
 using Platform.Infrastructure.Features.Memory.Context;
 using Platform.Infrastructure.Features.Memory.Embeddings;
 using Platform.Infrastructure.Features.Memory.Events;
 using Platform.Infrastructure.Features.Memory.Evidence;
 using Platform.Infrastructure.Features.Memory.Legacy;
+using Platform.Infrastructure.Features.Memory.Maintenance;
 using Platform.Infrastructure.Features.Memory.Procedural;
 using Platform.Infrastructure.Features.Memory.Profile;
 using Platform.Infrastructure.Features.Memory.Review;
@@ -64,6 +70,9 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddScoped<IMemoryEvidenceReadRepository, EfMemoryEvidenceReadRepository>()
             .AddScoped<IMemoryConsolidationRunRepository, EfMemoryConsolidationRunRepository>()
             .AddSingleton<IMemoryConsolidationPolicyProvider, DefaultMemoryConsolidationPolicyProvider>()
+            .AddSingleton<IMemoryConfidencePolicy, DefaultMemoryConfidencePolicy>()
+            .AddSingleton<IMemoryEventPolicyProvider, DefaultMemoryEventPolicyProvider>()
+            .AddSingleton<IExplicitProfileConflictDetector, ExplicitProfileConflictDetector>()
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, EfSemanticMemoryReadRepository>()
             .AddScoped<EfProceduralRuleService>()
@@ -72,6 +81,8 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddScoped<IMemoryContextProvider, EfMemoryContextProvider>()
             .AddScoped<IExplicitUserProfileRepository, EfExplicitUserProfileRepository>()
             .AddScoped<IMemoryReviewService, EfMemoryReviewService>()
-            .AddScoped<ISemanticMemoryService, EfSemanticMemoryService>();
+            .AddScoped<ISemanticMemoryService, EfSemanticMemoryService>()
+            .AddScoped<IMemorySemanticMergeService, EfMemorySemanticMergeService>()
+            .AddScoped<ISemanticMemoryMaintenanceService, EfSemanticMemoryMaintenanceService>();
     }
 }

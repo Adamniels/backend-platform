@@ -238,4 +238,101 @@ public sealed class SemanticMemoryV1FlowTests(PlatformWebApplicationFactory fact
         Assert.NotNull(s2);
         Assert.Equal(s1.Confidence, s2!.Confidence);
     }
+
+    [Fact]
+    public async Task Contradicting_evidence_lowers_confidence_and_appears_in_context_conflicts()
+    {
+        var k = $"sem-contradict-{Guid.NewGuid():N}";
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                HandleCookies = true,
+            });
+
+        await client.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var seedRes = await client.PostAsJsonAsync(
+            new Uri("/api/v1/memory/events", UriKind.Relative),
+            new IngestMemoryEventV1Request
+            {
+                EventType = "integration.contradiction.seed",
+                UserId = 1,
+                OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            });
+        seedRes.EnsureSuccessStatusCode();
+        var seed = await seedRes.Content.ReadFromJsonAsync<MemoryEventCreatedV1Dto>(JsonReadOptions);
+        Assert.NotNull(seed);
+
+        var create = await client.PostAsJsonAsync(
+            new Uri("/api/v1/memory/semantics", UriKind.Relative),
+            new CreateSemanticMemoryV1Request
+            {
+                UserId = 1,
+                Key = k,
+                Claim = "contradiction test memory",
+                Confidence = 0.7d,
+                Domain = "work",
+                Status = "Active",
+                EventId = seed!.Id,
+                EvidenceStrength = 0.8d,
+                EvidenceSourceKind = "Workflow",
+                EvidenceReliabilityWeight = 0.8d,
+            });
+        create.EnsureSuccessStatusCode();
+        var sem = await create.Content.ReadFromJsonAsync<SemanticMemoryV1Dto>(JsonReadOptions);
+        Assert.NotNull(sem);
+        var confidenceBefore = sem!.Confidence;
+
+        var contraRes = await client.PostAsJsonAsync(
+            new Uri("/api/v1/memory/events", UriKind.Relative),
+            new IngestMemoryEventV1Request
+            {
+                EventType = "integration.contradiction.user",
+                UserId = 1,
+                OccurredAt = DateTimeOffset.UtcNow,
+            });
+        contraRes.EnsureSuccessStatusCode();
+        var contra = await contraRes.Content.ReadFromJsonAsync<MemoryEventCreatedV1Dto>(JsonReadOptions);
+        Assert.NotNull(contra);
+
+        var attach = await client.PostAsJsonAsync(
+            new Uri($"/api/v1/memory/semantics/{sem.Id}/evidence", UriKind.Relative),
+            new AttachSemanticMemoryEvidenceV1Request
+            {
+                UserId = 1,
+                EventId = contra!.Id,
+                Strength = 0.95d,
+                Polarity = "Contradict",
+                SourceKind = "UserAction",
+                ReliabilityWeight = 0.92d,
+                Reason = "integration contradiction",
+            });
+        attach.EnsureSuccessStatusCode();
+        var after = await attach.Content.ReadFromJsonAsync<SemanticMemoryV1Dto>(JsonReadOptions);
+        Assert.NotNull(after);
+        Assert.True(after!.Confidence < confidenceBefore);
+
+        var evidence = await client.GetAsync(
+            new Uri($"/api/v1/memory/semantics/{sem.Id}/evidence?userId=1", UriKind.Relative));
+        evidence.EnsureSuccessStatusCode();
+        var evidenceBody = await evidence.Content.ReadFromJsonAsync<SemanticMemoryEvidenceV1Item[]>(JsonReadOptions);
+        Assert.NotNull(evidenceBody);
+        Assert.Contains(evidenceBody!, x => x.EventId == contra.Id && x.Polarity == "Contradict");
+
+        var ctx = await client.PostAsJsonAsync(
+            new Uri("/api/v1/memory/context", UriKind.Relative),
+            new GetMemoryContextV1Request
+            {
+                UserId = 1,
+                TaskDescription = k,
+                IncludeVectorRecall = false,
+            });
+        ctx.EnsureSuccessStatusCode();
+        var body = await ctx.Content.ReadFromJsonAsync<MemoryContextV1Dto>(JsonReadOptions);
+        Assert.NotNull(body);
+        Assert.Contains(body!.Conflicts, x => x.Kind == "contradicting_evidence" && x.RelatedEntityIds.Contains(sem.Id.ToString()));
+    }
 }

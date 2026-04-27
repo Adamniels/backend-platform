@@ -28,6 +28,12 @@ public interface ISemanticMemoryService
         long eventId,
         double evidenceStrength,
         string? evidenceReason,
+        MemoryEvidencePolarity evidencePolarity = MemoryEvidencePolarity.Support,
+        MemoryEvidenceSourceKind evidenceSourceKind = MemoryEvidenceSourceKind.SystemHeuristic,
+        double evidenceReliabilityWeight = 0.55d,
+        string? evidenceSourceId = null,
+        string? evidenceSchemaVersion = null,
+        string? evidenceProvenanceJson = null,
         CancellationToken cancellationToken = default);
 
     Task<SemanticMemory> SetConfidenceAsync(
@@ -48,6 +54,12 @@ public interface ISemanticMemoryService
         bool reinforce,
         double reinforceConfidenceDelta,
         DateTimeOffset? eventOccurredAtForReinforce,
+        MemoryEvidencePolarity polarity = MemoryEvidencePolarity.Support,
+        MemoryEvidenceSourceKind sourceKind = MemoryEvidenceSourceKind.SystemHeuristic,
+        double reliabilityWeight = 0.55d,
+        string? sourceId = null,
+        string? schemaVersion = null,
+        string? provenanceJson = null,
         CancellationToken cancellationToken = default);
 
     Task<SemanticMemory> ArchiveAsync(

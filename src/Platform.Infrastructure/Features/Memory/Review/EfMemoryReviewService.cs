@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
+using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Review;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
@@ -10,7 +11,11 @@ using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Review;
 
-public sealed class EfMemoryReviewService(PlatformDbContext db, IProceduralRuleService proceduralRules)
+public sealed class EfMemoryReviewService(
+    PlatformDbContext db,
+    IProceduralRuleService proceduralRules,
+    ISemanticMemoryService semanticService,
+    IMemorySemanticMergeService semanticMerge)
     : IMemoryReviewService
 {
     public async Task<MemoryReviewQueueItem> CreatePendingAsync(
@@ -85,8 +90,32 @@ public sealed class EfMemoryReviewService(PlatformDbContext db, IProceduralRuleS
                         .ApplyApprovedNewProceduralProposalAsync(userId, procPayload, at, cancellationToken)
                         .ConfigureAwait(false);
                     break;
-                case MemoryReviewProposalType.AdjustConfidence:
+                case MemoryReviewProposalType.ArchiveStaleSemantic:
+                    var archivePayload = MemoryReviewProposalJson.ParseArchiveStaleSemantic(row.ProposedChangeJson);
+                    var archived = await semanticService
+                        .ArchiveAsync(archivePayload.SemanticMemoryId, userId, cancellationToken)
+                        .ConfigureAwait(false);
+                    semanticId = archived.Id;
+                    break;
                 case MemoryReviewProposalType.MergeDuplicate:
+                case MemoryReviewProposalType.MergeSemanticCandidates:
+                    var mergePayload = MemoryReviewProposalJson.ParseMergeSemanticCandidates(row.ProposedChangeJson);
+                    semanticId = await semanticMerge
+                        .MergeApprovedAsync(
+                            userId,
+                            mergePayload.SourceSemanticIds,
+                            mergePayload.CanonicalSemanticId,
+                            mergePayload.ResultingClaim,
+                            mergePayload.Domain,
+                            at,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    break;
+                case MemoryReviewProposalType.ContradictionDetected:
+                    var contradictionPayload = MemoryReviewProposalJson.ParseContradictionDetected(row.ProposedChangeJson);
+                    semanticId = contradictionPayload.SemanticMemoryId;
+                    break;
+                case MemoryReviewProposalType.AdjustConfidence:
                 case MemoryReviewProposalType.Unspecified:
                 default:
                     throw new MemoryDomainException(

@@ -13,6 +13,9 @@ public sealed class MemoryRelationship
     public string ToEntity { get; set; } = "";
     public double Strength { get; set; }
     public string? Source { get; set; }
+    public string? FromEntityKind { get; set; }
+    public string? ToEntityKind { get; set; }
+    public string? ProvenanceJson { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public static MemoryRelationship Define(
@@ -22,7 +25,10 @@ public sealed class MemoryRelationship
         string toEntity,
         double strength,
         string? source,
-        DateTimeOffset at)
+        DateTimeOffset at,
+        string? fromEntityKind = null,
+        string? toEntityKind = null,
+        string? provenanceJson = null)
     {
         if (string.IsNullOrWhiteSpace(fromEntity) || string.IsNullOrWhiteSpace(toEntity))
         {
@@ -49,6 +55,9 @@ public sealed class MemoryRelationship
             ToEntity = toEntity.Trim(),
             Strength = strength,
             Source = string.IsNullOrWhiteSpace(source) ? null : source.Trim(),
+            FromEntityKind = string.IsNullOrWhiteSpace(fromEntityKind) ? null : fromEntityKind.Trim(),
+            ToEntityKind = string.IsNullOrWhiteSpace(toEntityKind) ? null : toEntityKind.Trim(),
+            ProvenanceJson = string.IsNullOrWhiteSpace(provenanceJson) ? null : provenanceJson,
             CreatedAt = at,
         };
     }

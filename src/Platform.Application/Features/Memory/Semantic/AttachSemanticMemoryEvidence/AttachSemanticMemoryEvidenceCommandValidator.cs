@@ -16,5 +16,14 @@ public sealed class AttachSemanticMemoryEvidenceCommandValidator
         RuleFor(x => x.Reason)
             .MaximumLength(2048)
             .When(x => x.Reason is not null);
+        When(
+            x => x.ReliabilityWeight is not null,
+            () => RuleFor(x => x.ReliabilityWeight!.Value).InclusiveBetween(0, 1));
+        RuleFor(x => x.SourceId)
+            .MaximumLength(512)
+            .When(x => x.SourceId is not null);
+        RuleFor(x => x.SchemaVersion)
+            .MaximumLength(64)
+            .When(x => x.SchemaVersion is not null);
     }
 }

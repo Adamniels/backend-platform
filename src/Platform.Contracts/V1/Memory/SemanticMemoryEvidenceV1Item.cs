@@ -11,4 +11,16 @@ public sealed class SemanticMemoryEvidenceV1Item
     public string? Note { get; set; }
 
     public DateTimeOffset OccurredAt { get; set; }
+
+    public string Polarity { get; set; } = "Support";
+
+    public string SourceKind { get; set; } = "SystemHeuristic";
+
+    public double ReliabilityWeight { get; set; }
+
+    public string? SourceId { get; set; }
+
+    public string? SchemaVersion { get; set; }
+
+    public string? ProvenanceJson { get; set; }
 }

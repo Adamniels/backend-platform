@@ -104,6 +104,15 @@ public static class MemoryV1EfConfiguration
             e.ToTable("memory_evidence");
             e.HasKey(x => x.Id);
             e.Property(x => x.Reason).HasMaxLength(2048);
+            e.Property(x => x.Polarity)
+                .HasConversion<string>()
+                .HasMaxLength(64);
+            e.Property(x => x.SourceKind)
+                .HasConversion<string>()
+                .HasMaxLength(64);
+            e.Property(x => x.SourceId).HasMaxLength(512);
+            e.Property(x => x.SchemaVersion).HasMaxLength(64);
+            e.Property(x => x.ProvenanceJson).HasColumnType("jsonb");
 
             e.HasOne(x => x.User)
                 .WithMany()
@@ -125,6 +134,7 @@ public static class MemoryV1EfConfiguration
             e.HasIndex(x => new { x.SemanticMemoryId, x.EventId })
                 .IsUnique()
                 .HasDatabaseName("ix_memory_evidence_semantic_event_unique");
+            e.HasIndex(x => new { x.UserId, x.Polarity }).HasDatabaseName("ix_memory_evidence_user_polarity");
         });
 
         modelBuilder.Entity<ProceduralRule>(e =>
@@ -202,6 +212,9 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.FromEntity).HasMaxLength(512);
             e.Property(x => x.ToEntity).HasMaxLength(512);
             e.Property(x => x.Source).HasMaxLength(512);
+            e.Property(x => x.FromEntityKind).HasMaxLength(128);
+            e.Property(x => x.ToEntityKind).HasMaxLength(128);
+            e.Property(x => x.ProvenanceJson).HasColumnType("jsonb");
 
             e.HasOne(x => x.User)
                 .WithMany()

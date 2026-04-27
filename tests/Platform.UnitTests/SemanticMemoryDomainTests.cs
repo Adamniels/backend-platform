@@ -43,4 +43,32 @@ public sealed class SemanticMemoryDomainTests
         var a = SemanticMemory.CreateInitial(1, "k2", "c", 0.5d, AuthorityWeight.Inferred, null, t);
         Assert.Throws<MemoryDomainException>(() => a.MarkRejected(t));
     }
+
+    [Fact]
+    public void Evidence_link_requires_valid_reliability_and_source()
+    {
+        var t = DateTimeOffset.UtcNow;
+        Assert.Throws<MemoryDomainException>(
+            () => MemoryEvidence.Link(
+                1,
+                2,
+                3,
+                0.5d,
+                "reason",
+                t,
+                MemoryEvidencePolarity.Support,
+                MemoryEvidenceSourceKind.Unspecified,
+                0.5d));
+        Assert.Throws<MemoryDomainException>(
+            () => MemoryEvidence.Link(
+                1,
+                2,
+                3,
+                0.5d,
+                "reason",
+                t,
+                MemoryEvidencePolarity.Support,
+                MemoryEvidenceSourceKind.Workflow,
+                1.5d));
+    }
 }

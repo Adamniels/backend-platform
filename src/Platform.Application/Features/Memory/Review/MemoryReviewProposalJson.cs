@@ -14,6 +14,9 @@ public static class MemoryReviewProposalJson
 
     public const string NewSemanticKind = "NewSemantic";
     public const string NewProceduralRuleKind = "NewProceduralRule";
+    public const string ContradictionDetectedKind = "ContradictionDetected";
+    public const string ArchiveStaleSemanticKind = "ArchiveStaleSemantic";
+    public const string MergeSemanticCandidatesKind = "MergeSemanticCandidates";
 
     public static string SerializeNewSemantic(NewSemanticMemoryProposalV1 p) =>
         JsonSerializer.Serialize(
@@ -76,6 +79,90 @@ public static class MemoryReviewProposalJson
                 p.AuthorityWeight,
                 p.BasisRuleId),
             WriteOptions);
+
+    public static string SerializeContradictionDetected(ContradictionDetectedProposalV1 p) =>
+        JsonSerializer.Serialize(
+            new ContradictionDetectedEnvelope(
+                ContradictionDetectedKind,
+                p.SemanticMemoryId,
+                p.Key,
+                p.Claim,
+                p.Confidence,
+                p.SupportScore,
+                p.ContradictionScore),
+            WriteOptions);
+
+    public static ContradictionDetectedProposalV1 ParseContradictionDetected(string? proposedChangeJson)
+    {
+        using var root = ParseKind(proposedChangeJson, ContradictionDetectedKind);
+        return new ContradictionDetectedProposalV1
+        {
+            SemanticMemoryId = root.RootElement.GetProperty("semanticMemoryId").GetInt64(),
+            Key = root.RootElement.TryGetProperty("key", out var k) ? k.GetString() ?? "" : "",
+            Claim = root.RootElement.TryGetProperty("claim", out var c) ? c.GetString() ?? "" : "",
+            Confidence = root.RootElement.TryGetProperty("confidence", out var conf) && conf.TryGetDouble(out var cd) ? cd : 0d,
+            SupportScore = root.RootElement.TryGetProperty("supportScore", out var ss) && ss.TryGetDouble(out var sd) ? sd : 0d,
+            ContradictionScore = root.RootElement.TryGetProperty("contradictionScore", out var cs) && cs.TryGetDouble(out var ccd) ? ccd : 0d,
+        };
+    }
+
+    public static string SerializeArchiveStaleSemantic(ArchiveStaleSemanticProposalV1 p) =>
+        JsonSerializer.Serialize(
+            new ArchiveStaleSemanticEnvelope(
+                ArchiveStaleSemanticKind,
+                p.SemanticMemoryId,
+                p.Key,
+                p.Claim,
+                p.CurrentConfidence,
+                p.LastSupportedAt),
+            WriteOptions);
+
+    public static ArchiveStaleSemanticProposalV1 ParseArchiveStaleSemantic(string? proposedChangeJson)
+    {
+        using var root = ParseKind(proposedChangeJson, ArchiveStaleSemanticKind);
+        DateTimeOffset? lastSupportedAt = null;
+        if (root.RootElement.TryGetProperty("lastSupportedAt", out var ls) &&
+            ls.ValueKind != JsonValueKind.Null &&
+            ls.TryGetDateTimeOffset(out var dto))
+        {
+            lastSupportedAt = dto;
+        }
+
+        return new ArchiveStaleSemanticProposalV1
+        {
+            SemanticMemoryId = root.RootElement.GetProperty("semanticMemoryId").GetInt64(),
+            Key = root.RootElement.TryGetProperty("key", out var k) ? k.GetString() ?? "" : "",
+            Claim = root.RootElement.TryGetProperty("claim", out var c) ? c.GetString() ?? "" : "",
+            CurrentConfidence = root.RootElement.TryGetProperty("currentConfidence", out var conf) && conf.TryGetDouble(out var cd) ? cd : 0d,
+            LastSupportedAt = lastSupportedAt,
+        };
+    }
+
+    public static string SerializeMergeSemanticCandidates(MergeSemanticCandidatesProposalV1 p) =>
+        JsonSerializer.Serialize(
+            new MergeSemanticCandidatesEnvelope(
+                MergeSemanticCandidatesKind,
+                p.SourceSemanticIds,
+                p.CanonicalSemanticId,
+                p.ResultingClaim,
+                p.Domain),
+            WriteOptions);
+
+    public static MergeSemanticCandidatesProposalV1 ParseMergeSemanticCandidates(string? proposedChangeJson)
+    {
+        using var root = ParseKind(proposedChangeJson, MergeSemanticCandidatesKind);
+        var ids = root.RootElement.TryGetProperty("sourceSemanticIds", out var idsProp) &&
+            idsProp.ValueKind == JsonValueKind.Array
+            ? idsProp.EnumerateArray().Select(x => x.GetInt64()).ToList()
+            : new List<long>();
+        return new MergeSemanticCandidatesProposalV1
+        {
+            SourceSemanticIds = ids,
+            CanonicalSemanticId = root.RootElement.GetProperty("canonicalSemanticId").GetInt64(),
+            ResultingClaim = root.RootElement.TryGetProperty("resultingClaim", out var rc) ? rc.GetString() ?? "" : "",
+            Domain = root.RootElement.TryGetProperty("domain", out var d) && d.ValueKind != JsonValueKind.Null ? d.GetString() : null,
+        };
+    }
 
     public static NewProceduralRuleMemoryProposalV1 ParseNewProceduralRule(string? proposedChangeJson)
     {
@@ -155,6 +242,31 @@ public static class MemoryReviewProposalJson
         }
     }
 
+    private static JsonDocument ParseKind(string? proposedChangeJson, string expectedKind)
+    {
+        if (string.IsNullOrWhiteSpace(proposedChangeJson))
+        {
+            throw new MemoryDomainException("ProposedChangeJson is required.");
+        }
+
+        try
+        {
+            var doc = JsonDocument.Parse(proposedChangeJson);
+            var kind = doc.RootElement.TryGetProperty("kind", out var k) ? k.GetString() : null;
+            if (!string.Equals(kind, expectedKind, StringComparison.OrdinalIgnoreCase))
+            {
+                doc.Dispose();
+                throw new MemoryDomainException("Unsupported proposal kind in ProposedChangeJson.");
+            }
+
+            return doc;
+        }
+        catch (JsonException ex)
+        {
+            throw new MemoryDomainException($"Invalid proposal JSON: {ex.Message}");
+        }
+    }
+
     private sealed record NewSemanticEnvelope(
         [property: JsonPropertyName("kind")] string Kind,
         [property: JsonPropertyName("key")] string Key,
@@ -171,4 +283,28 @@ public static class MemoryReviewProposalJson
         [property: JsonPropertyName("source")] string Source,
         [property: JsonPropertyName("authorityWeight")] double AuthorityWeight,
         [property: JsonPropertyName("basisRuleId")] long? BasisRuleId);
+
+    private sealed record ContradictionDetectedEnvelope(
+        [property: JsonPropertyName("kind")] string Kind,
+        [property: JsonPropertyName("semanticMemoryId")] long SemanticMemoryId,
+        [property: JsonPropertyName("key")] string Key,
+        [property: JsonPropertyName("claim")] string Claim,
+        [property: JsonPropertyName("confidence")] double Confidence,
+        [property: JsonPropertyName("supportScore")] double SupportScore,
+        [property: JsonPropertyName("contradictionScore")] double ContradictionScore);
+
+    private sealed record ArchiveStaleSemanticEnvelope(
+        [property: JsonPropertyName("kind")] string Kind,
+        [property: JsonPropertyName("semanticMemoryId")] long SemanticMemoryId,
+        [property: JsonPropertyName("key")] string Key,
+        [property: JsonPropertyName("claim")] string Claim,
+        [property: JsonPropertyName("currentConfidence")] double CurrentConfidence,
+        [property: JsonPropertyName("lastSupportedAt")] DateTimeOffset? LastSupportedAt);
+
+    private sealed record MergeSemanticCandidatesEnvelope(
+        [property: JsonPropertyName("kind")] string Kind,
+        [property: JsonPropertyName("sourceSemanticIds")] IReadOnlyList<long> SourceSemanticIds,
+        [property: JsonPropertyName("canonicalSemanticId")] long CanonicalSemanticId,
+        [property: JsonPropertyName("resultingClaim")] string ResultingClaim,
+        [property: JsonPropertyName("domain")] string? Domain);
 }

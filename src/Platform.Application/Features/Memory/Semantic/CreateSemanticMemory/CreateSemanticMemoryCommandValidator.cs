@@ -16,9 +16,18 @@ public sealed class CreateSemanticMemoryCommandValidator : AbstractValidator<Cre
             .InclusiveBetween(0, 1);
         RuleFor(x => x.EvidenceStrength)
             .InclusiveBetween(0, 1);
+        When(
+            x => x.EvidenceReliabilityWeight is not null,
+            () => RuleFor(x => x.EvidenceReliabilityWeight!.Value).InclusiveBetween(0, 1));
         RuleFor(x => x.EvidenceReason)
             .MaximumLength(2048)
             .When(x => x.EvidenceReason is not null);
+        RuleFor(x => x.EvidenceSourceId)
+            .MaximumLength(512)
+            .When(x => x.EvidenceSourceId is not null);
+        RuleFor(x => x.EvidenceSchemaVersion)
+            .MaximumLength(64)
+            .When(x => x.EvidenceSchemaVersion is not null);
         RuleFor(x => x.Domain)
             .MaximumLength(256)
             .When(x => !string.IsNullOrEmpty(x.Domain));

@@ -9,4 +9,10 @@ public sealed record AttachSemanticMemoryEvidenceCommand(
     bool FromInferredSource,
     bool ReinforceConfidence,
     double ReinforceConfidenceDelta,
-    DateTimeOffset? EventOccurredAt);
+    DateTimeOffset? EventOccurredAt,
+    string? Polarity = null,
+    string? SourceKind = null,
+    double? ReliabilityWeight = null,
+    string? SourceId = null,
+    string? SchemaVersion = null,
+    string? ProvenanceJson = null);

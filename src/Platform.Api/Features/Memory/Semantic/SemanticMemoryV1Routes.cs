@@ -100,7 +100,13 @@ public static class SemanticMemoryV1Routes
                         body.Status,
                         body.EventId,
                         body.EvidenceStrength,
-                        body.EvidenceReason);
+                        body.EvidenceReason,
+                        body.EvidencePolarity,
+                        body.EvidenceSourceKind,
+                        body.EvidenceReliabilityWeight,
+                        body.EvidenceSourceId,
+                        body.EvidenceSchemaVersion,
+                        body.EvidenceProvenanceJson);
                     var res = await h
                         .HandleAsync(cmd, ct)
                         .ConfigureAwait(false);
@@ -150,7 +156,13 @@ public static class SemanticMemoryV1Routes
                                 body.FromInferredSource,
                                 body.ReinforceConfidence,
                                 body.ReinforceConfidenceDelta,
-                                body.EventOccurredAt),
+                                body.EventOccurredAt,
+                                body.Polarity,
+                                body.SourceKind,
+                                body.ReliabilityWeight,
+                                body.SourceId,
+                                body.SchemaVersion,
+                                body.ProvenanceJson),
                             ct)
                         .ConfigureAwait(false);
                     return Results.Ok(res);

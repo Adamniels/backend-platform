@@ -128,6 +128,10 @@ public sealed class MemoryConflictV1Dto
     public string Kind { get; set; } = "";
     public string Summary { get; set; } = "";
     public IReadOnlyList<string> RelatedEntityIds { get; set; } = Array.Empty<string>();
+    public string Severity { get; set; } = "Info";
+    public bool AgainstExplicitProfile { get; set; }
+    public double? Confidence { get; set; }
+    public double? AuthorityWeight { get; set; }
 }
 
 public sealed class MemoryWarningV1Dto

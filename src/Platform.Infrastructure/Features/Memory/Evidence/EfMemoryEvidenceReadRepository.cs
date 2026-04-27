@@ -39,6 +39,12 @@ public sealed class EfMemoryEvidenceReadRepository(PlatformDbContext db) : IMemo
                     Strength = e.Strength,
                     Note = e.Reason,
                     OccurredAt = ev.OccurredAt,
+                    Polarity = e.Polarity.ToString(),
+                    SourceKind = e.SourceKind.ToString(),
+                    ReliabilityWeight = e.ReliabilityWeight,
+                    SourceId = e.SourceId,
+                    SchemaVersion = e.SchemaVersion,
+                    ProvenanceJson = e.ProvenanceJson,
                 })
             .Take(n)
             .ToListAsync(cancellationToken)

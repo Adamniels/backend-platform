@@ -3,6 +3,7 @@ using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory.Entities;
 using Platform.Application.Features.Memory.Semantic;
+using Platform.Application.Features.Memory.Semantic.CreateSemanticMemory;
 
 namespace Platform.Application.Features.Memory.Semantic.AttachSemanticMemoryEvidence;
 
@@ -29,6 +30,12 @@ public sealed class AttachSemanticMemoryEvidenceCommandHandler(
                 command.ReinforceConfidence,
                 command.ReinforceConfidenceDelta,
                 command.EventOccurredAt,
+                SemanticEvidenceContractParser.ParsePolarity(command.Polarity),
+                SemanticEvidenceContractParser.ParseSourceKind(command.SourceKind),
+                command.ReliabilityWeight ?? 0.55d,
+                command.SourceId,
+                command.SchemaVersion,
+                command.ProvenanceJson,
                 cancellationToken)
             .ConfigureAwait(false);
         return row.ToV1Dto();

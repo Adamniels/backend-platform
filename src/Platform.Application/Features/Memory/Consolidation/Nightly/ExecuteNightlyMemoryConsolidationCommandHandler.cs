@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Platform.Application.Abstractions.Memory.Consolidation;
 using Platform.Application.Abstractions.Memory.Evidence;
 using Platform.Application.Abstractions.Memory.Events;
+using Platform.Application.Abstractions.Memory.Maintenance;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Consolidation;
@@ -19,6 +20,8 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
     IMemoryReviewService reviews,
     IMemoryEvidenceReadRepository evidenceRead,
     IMemoryConsolidationPolicyProvider policy,
+    IMemoryEventPolicyProvider eventPolicy,
+    ISemanticMemoryMaintenanceService semanticMaintenance,
     ILogger<ExecuteNightlyMemoryConsolidationCommandHandler> logger)
 {
     public async Task<NightlyMemoryConsolidationV1Response> HandleAsync(
@@ -129,7 +132,8 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                     }
 
                     var evidenceEvent = list[0];
-                    if (policy.BlocksAutoReinforceForEventType(evidenceEvent.EventType))
+                    var evPolicy = eventPolicy.Classify(evidenceEvent.EventType);
+                    if (!evPolicy.AutoReinforceEligible || policy.BlocksAutoReinforceForEventType(evidenceEvent.EventType))
                     {
                         logger.LogInformation(
                             "Skip auto-reinforce for semantic {SemanticId}: event type {EventType} is blocked by consolidation policy.",
@@ -165,6 +169,18 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                             reinforce: true,
                             reinforceConfidenceDelta: policy.ReinforceConfidenceDelta,
                             eventOccurredAtForReinforce: evidenceEvent.OccurredAt,
+                            polarity: MemoryEvidencePolarity.Support,
+                            sourceKind: evPolicy.DefaultSourceKind,
+                            reliabilityWeight: evPolicy.DefaultReliabilityWeight,
+                            sourceId: evidenceEvent.WorkflowId,
+                            schemaVersion: null,
+                            provenanceJson: JsonSerializer.Serialize(
+                                new
+                                {
+                                    source = "nightly_consolidation_v1",
+                                    eventPolicyFamily = evPolicy.Family,
+                                    eventType = evidenceEvent.EventType,
+                                }),
                             cancellationToken)
                         .ConfigureAwait(false);
                     auto++;
@@ -217,6 +233,9 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
 
             run.ProposalsCreatedCount = proposals;
             run.AutoUpdatesCount = auto;
+            var maintenance = await semanticMaintenance
+                .RunAsync(command.UserId, DateTimeOffset.UtcNow, cancellationToken)
+                .ConfigureAwait(false);
             run.Status = MemoryConsolidationRunStatus.Completed;
             run.CompletedAt = DateTimeOffset.UtcNow;
             run.Error = null;
@@ -227,7 +246,12 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                 run.ProcessedEventsCount,
                 auto,
                 proposals);
-            return Map(run, fromCache: false);
+            var response = Map(run, fromCache: false);
+            response.RecomputedSemanticsCount = maintenance.RecomputedSemanticsCount;
+            response.StaleProposalsCreatedCount = maintenance.StaleProposalsCreatedCount;
+            response.ContradictionProposalsCreatedCount = maintenance.ContradictionProposalsCreatedCount;
+            response.MergeProposalsCreatedCount = maintenance.MergeProposalsCreatedCount;
+            return response;
         }
         catch (Exception ex)
         {
@@ -251,6 +275,10 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
             ProcessedEventsCount = run.ProcessedEventsCount,
             ProposalsCreatedCount = run.ProposalsCreatedCount,
             AutoUpdatesCount = run.AutoUpdatesCount,
+            RecomputedSemanticsCount = 0,
+            StaleProposalsCreatedCount = 0,
+            ContradictionProposalsCreatedCount = 0,
+            MergeProposalsCreatedCount = 0,
             Error = run.Error,
             FromCache = fromCache,
         };

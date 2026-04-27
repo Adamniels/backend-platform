@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Platform.Application.Abstractions.Memory.Confidence;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
@@ -8,7 +9,9 @@ using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Semantic;
 
-public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMemoryService
+public sealed class EfSemanticMemoryService(
+    PlatformDbContext db,
+    IMemoryConfidencePolicy confidencePolicy) : ISemanticMemoryService
 {
     public async Task<SemanticMemory> ArchiveAsync(
         long id,
@@ -32,6 +35,12 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         bool reinforce,
         double reinforceConfidenceDelta,
         DateTimeOffset? eventOccurredAtForReinforce,
+        MemoryEvidencePolarity polarity = MemoryEvidencePolarity.Support,
+        MemoryEvidenceSourceKind sourceKind = MemoryEvidenceSourceKind.SystemHeuristic,
+        double reliabilityWeight = 0.55d,
+        string? sourceId = null,
+        string? schemaVersion = null,
+        string? provenanceJson = null,
         CancellationToken cancellationToken = default)
     {
         var row = await LoadMutableAsync(id, userId, cancellationToken).ConfigureAwait(false);
@@ -47,7 +56,19 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         }
 
         var at = DateTimeOffset.UtcNow;
-        var ev = MemoryEvidence.Link(userId, id, eventId, strength, reason, at);
+        var ev = MemoryEvidence.Link(
+            userId,
+            id,
+            eventId,
+            strength,
+            reason,
+            at,
+            polarity,
+            sourceKind,
+            reliabilityWeight,
+            sourceId,
+            schemaVersion,
+            provenanceJson);
         db.MemoryEvidences.Add(ev);
         if (reinforce)
         {
@@ -62,6 +83,8 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         try
         {
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await RecomputeConfidenceAsync(row, userId, at, conflictsWithExplicitProfile: false, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (DbUpdateException)
         {
@@ -82,6 +105,12 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         long eventId,
         double evidenceStrength,
         string? evidenceReason,
+        MemoryEvidencePolarity evidencePolarity = MemoryEvidencePolarity.Support,
+        MemoryEvidenceSourceKind evidenceSourceKind = MemoryEvidenceSourceKind.SystemHeuristic,
+        double evidenceReliabilityWeight = 0.55d,
+        string? evidenceSourceId = null,
+        string? evidenceSchemaVersion = null,
+        string? evidenceProvenanceJson = null,
         CancellationToken cancellationToken = default)
     {
         if (!AuthorityWeight.TryCreate(authorityWeight, out var auth))
@@ -134,7 +163,13 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
                 eventId,
                 evidenceStrength,
                 evidenceReason,
-                at);
+                at,
+                evidencePolarity,
+                evidenceSourceKind,
+                evidenceReliabilityWeight,
+                evidenceSourceId,
+                evidenceSchemaVersion,
+                evidenceProvenanceJson);
             db.MemoryEvidences.Add(link);
             try
             {
@@ -150,6 +185,8 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
                 throw new MemoryDomainException("Could not link evidence to the new semantic memory.");
             }
 
+            await RecomputeConfidenceAsync(created, userId, at, conflictsWithExplicitProfile: false, cancellationToken)
+                .ConfigureAwait(false);
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             return created;
         }
@@ -275,6 +312,9 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
         if (fromInferredSource)
         {
             row.ThrowIfInferredMutationBlocked();
+            await RecomputeConfidenceAsync(row, userId, DateTimeOffset.UtcNow, conflictsWithExplicitProfile: false, cancellationToken)
+                .ConfigureAwait(false);
+            return row;
         }
 
         var at = DateTimeOffset.UtcNow;
@@ -313,4 +353,33 @@ public sealed class EfSemanticMemoryService(PlatformDbContext db) : ISemanticMem
 
     private static bool IsUniqueViolation(DbUpdateException ex) =>
         ex.InnerException is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation;
+
+    private async Task RecomputeConfidenceAsync(
+        SemanticMemory row,
+        int userId,
+        DateTimeOffset at,
+        bool conflictsWithExplicitProfile,
+        CancellationToken cancellationToken)
+    {
+        var signals = await (
+                from e in db.MemoryEvidences.AsNoTracking()
+                join ev in db.MemoryEvents.AsNoTracking() on e.EventId equals ev.Id
+                where e.UserId == userId && e.SemanticMemoryId == row.Id && ev.UserId == userId
+                select new SemanticEvidenceSignal(
+                    e.Polarity,
+                    e.SourceKind,
+                    e.Strength,
+                    e.ReliabilityWeight,
+                    ev.OccurredAt))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (signals.Count == 0)
+        {
+            return;
+        }
+
+        var computed = confidencePolicy.Compute(row, signals, conflictsWithExplicitProfile, at);
+        row.SetConfidence(computed.Confidence, at);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
 }
