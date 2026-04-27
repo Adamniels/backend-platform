@@ -563,6 +563,10 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.Property<string>("EvidenceJson")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("DedupFingerprint")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
@@ -610,6 +614,11 @@ namespace Platform.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("ix_memory_review_queue_created_at");
+
+                    b.HasIndex("UserId", "ProposalType", "DedupFingerprint")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 0 AND \"DedupFingerprint\" IS NOT NULL")
+                        .HasDatabaseName("ix_memory_review_queue_pending_dedup");
 
                     b.HasIndex("UserId", "Status", "Priority")
                         .HasDatabaseName("ix_memory_review_queue_user_id_status_priority");

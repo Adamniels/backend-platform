@@ -17,6 +17,7 @@ using Platform.Application.Abstractions.Memory.Profile;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Application.Features.Memory.Embeddings;
 using Platform.Infrastructure.Features.Memory.Consolidation;
 using Platform.Infrastructure.Features.Memory.Confidence;
@@ -31,8 +32,10 @@ using Platform.Infrastructure.Features.Memory.Maintenance;
 using Platform.Infrastructure.Features.Memory.Procedural;
 using Platform.Infrastructure.Features.Memory.Profile;
 using Platform.Infrastructure.Features.Memory.Review;
+using Platform.Infrastructure.Features.Memory.Review.Approval;
 using Platform.Infrastructure.Features.Memory.Semantic;
 using Platform.Infrastructure.Features.Memory.Stubs;
+using Platform.Infrastructure.Features.Memory.Users;
 
 namespace Platform.Infrastructure.Features.Memory.DependencyInjection;
 
@@ -73,6 +76,7 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddSingleton<IMemoryConfidencePolicy, DefaultMemoryConfidencePolicy>()
             .AddSingleton<IMemoryEventPolicyProvider, DefaultMemoryEventPolicyProvider>()
             .AddSingleton<IExplicitProfileConflictDetector, ExplicitProfileConflictDetector>()
+            .AddScoped<ISemanticConflictEvaluationService, EfSemanticConflictEvaluationService>()
             .AddScoped<IMemoryItemReadRepository, MemoryItemReadRepositoryStub>()
             .AddScoped<ISemanticMemoryReadRepository, EfSemanticMemoryReadRepository>()
             .AddScoped<EfProceduralRuleService>()
@@ -80,9 +84,25 @@ public static class MemoryInfrastructureServiceCollectionExtensions
             .AddScoped<IProceduralRuleReadRepository>(sp => sp.GetRequiredService<EfProceduralRuleService>())
             .AddScoped<IMemoryContextProvider, EfMemoryContextProvider>()
             .AddScoped<IExplicitUserProfileRepository, EfExplicitUserProfileRepository>()
+            .AddScoped<IMemoryUserContextResolver, DefaultMemoryUserContextResolver>()
+            .AddScoped<IMemoryReviewApprovalHandler, NewSemanticApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, NewProceduralRuleApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, ArchiveStaleSemanticApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, MergeSemanticCandidatesApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, ContradictionDetectedApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, ConflictWithExplicitProfileApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, SupersedeSemanticApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, ReviseSemanticClaimApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandler, ReviseProceduralRuleApprovalHandler>()
+            .AddScoped<IMemoryReviewApprovalHandlerResolver, MemoryReviewApprovalHandlerResolver>()
             .AddScoped<IMemoryReviewService, EfMemoryReviewService>()
             .AddScoped<ISemanticMemoryService, EfSemanticMemoryService>()
             .AddScoped<IMemorySemanticMergeService, EfMemorySemanticMergeService>()
+            .AddScoped<ISemanticConfidenceRecomputeService, EfSemanticConfidenceRecomputeService>()
+            .AddSingleton<IStaleSemanticPolicy, DefaultStaleSemanticPolicy>()
+            .AddSingleton<IContradictionEvaluationService, DefaultContradictionEvaluationService>()
+            .AddSingleton<ISemanticDuplicateDetector, DefaultSemanticDuplicateDetector>()
+            .AddScoped<IMemoryReviewProposalEmitter, MemoryReviewProposalEmitter>()
             .AddScoped<ISemanticMemoryMaintenanceService, EfSemanticMemoryMaintenanceService>();
     }
 }

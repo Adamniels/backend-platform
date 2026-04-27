@@ -1,23 +1,22 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 using Platform.Application.Features.Memory.Semantic;
 
 namespace Platform.Application.Features.Memory.Semantic.CreateSemanticMemory;
 
 public sealed class CreateSemanticMemoryCommandHandler(
     IValidator<CreateSemanticMemoryCommand> validator,
-    ISemanticMemoryService semantics)
+    ISemanticMemoryService semantics,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<SemanticMemoryV1Dto> HandleAsync(
         CreateSemanticMemoryCommand command,
         CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
         var initial = SemanticMemoryInitialStatus.Parse(command.Status);
         var auth = command.AuthorityWeight
             ?? global::Platform.Domain.Features.Memory.ValueObjects.AuthorityWeight.Inferred.Value;

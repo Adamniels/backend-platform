@@ -13,6 +13,7 @@ public sealed class MemoryReviewQueueItem
     public string Summary { get; set; } = "";
     public string? ProposedChangeJson { get; set; }
     public string? EvidenceJson { get; set; }
+    public string? DedupFingerprint { get; set; }
     public int Priority { get; set; }
     public MemoryReviewStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -35,6 +36,7 @@ public sealed class MemoryReviewQueueItem
         string summary,
         string? proposedChangeJson,
         string? evidenceJson,
+        string? dedupFingerprint,
         int priority,
         DateTimeOffset at)
     {
@@ -51,6 +53,7 @@ public sealed class MemoryReviewQueueItem
             Summary = (summary ?? "").Trim(),
             ProposedChangeJson = proposedChangeJson,
             EvidenceJson = evidenceJson,
+            DedupFingerprint = string.IsNullOrWhiteSpace(dedupFingerprint) ? null : dedupFingerprint.Trim(),
             Priority = priority,
             Status = MemoryReviewStatus.Pending,
             CreatedAt = at,

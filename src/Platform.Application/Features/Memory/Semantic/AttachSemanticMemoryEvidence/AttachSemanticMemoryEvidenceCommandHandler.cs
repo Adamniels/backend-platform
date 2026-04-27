@@ -1,7 +1,7 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 using Platform.Application.Features.Memory.Semantic;
 using Platform.Application.Features.Memory.Semantic.CreateSemanticMemory;
 
@@ -9,16 +9,15 @@ namespace Platform.Application.Features.Memory.Semantic.AttachSemanticMemoryEvid
 
 public sealed class AttachSemanticMemoryEvidenceCommandHandler(
     IValidator<AttachSemanticMemoryEvidenceCommand> validator,
-    ISemanticMemoryService semantics)
+    ISemanticMemoryService semantics,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<SemanticMemoryV1Dto> HandleAsync(
         AttachSemanticMemoryEvidenceCommand command,
         CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
         var row = await semantics
             .AttachEvidenceAsync(
                 command.SemanticMemoryId,

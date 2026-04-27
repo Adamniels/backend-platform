@@ -1,4 +1,5 @@
 using Platform.Domain.Features.Memory.Entities;
+using Platform.Domain.Features.Memory;
 
 namespace Platform.Application.Abstractions.Memory.Review;
 
@@ -38,9 +39,9 @@ public interface IMemoryReviewService
         string? proposedChangeJson,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Used by consolidation idempotency: pending item with the same fingerprint in <c>EvidenceJson</c>.</summary>
-    Task<bool> HasPendingWithEvidenceSubstringAsync(
+    Task<bool> HasPendingWithFingerprintAsync(
         int userId,
-        string evidenceSubstring,
+        MemoryReviewProposalType proposalType,
+        string dedupFingerprint,
         CancellationToken cancellationToken = default);
 }

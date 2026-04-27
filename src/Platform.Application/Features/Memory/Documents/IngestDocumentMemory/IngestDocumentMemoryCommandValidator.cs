@@ -1,6 +1,5 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Documents;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Documents.IngestDocumentMemory;
 
@@ -25,8 +24,5 @@ public sealed class IngestDocumentMemoryCommandValidator : AbstractValidator<Ing
         RuleFor(x => x.Domain)
             .MaximumLength(256)
             .When(x => !string.IsNullOrEmpty(x.Domain));
-        RuleFor(x => x.UserId)
-            .Must(id => id == 0 || id == MemoryUser.DefaultId)
-            .WithMessage("UserId must be omitted, 0, or 1 in the current deployment.");
     }
 }

@@ -319,6 +319,7 @@ file static class MockDatabaseSeed
             { "proposedKey": "learning.media_pref", "claim": "The user may prefer short video for unfamiliar topics." }
             """,
             null,
+            null,
             3,
             at);
         db.Add(review1);

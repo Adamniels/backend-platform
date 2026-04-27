@@ -1,19 +1,19 @@
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 using Platform.Application.Features.Memory.Semantic;
 
 namespace Platform.Application.Features.Memory.Semantic.GetSemanticMemory;
 
-public sealed class GetSemanticMemoryQueryHandler(ISemanticMemoryService semantics)
+public sealed class GetSemanticMemoryQueryHandler(
+    ISemanticMemoryService semantics,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<SemanticMemoryV1Dto?> HandleAsync(
         GetSemanticMemoryQuery query,
         CancellationToken cancellationToken = default)
     {
-        var userId = query.UserId is 0
-            ? MemoryUser.DefaultId
-            : query.UserId;
+        var userId = userResolver.Resolve(query.UserId);
         var row = await semantics
             .GetByIdAsync(query.Id, userId, cancellationToken)
             .ConfigureAwait(false);

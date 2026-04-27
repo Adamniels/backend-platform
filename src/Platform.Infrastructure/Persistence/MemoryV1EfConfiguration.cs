@@ -166,6 +166,7 @@ public static class MemoryV1EfConfiguration
             e.Property(x => x.Summary).HasMaxLength(4000);
             e.Property(x => x.ProposedChangeJson).HasColumnType("jsonb");
             e.Property(x => x.EvidenceJson).HasColumnType("jsonb");
+            e.Property(x => x.DedupFingerprint).HasMaxLength(256);
             e.Property(x => x.RejectedReason).HasMaxLength(2000);
             e.Property(x => x.ReviewNotes).HasMaxLength(4000);
 
@@ -184,6 +185,10 @@ public static class MemoryV1EfConfiguration
 
             e.HasIndex(x => new { x.UserId, x.Status, x.Priority })
                 .HasDatabaseName("ix_memory_review_queue_user_id_status_priority");
+            e.HasIndex(x => new { x.UserId, x.ProposalType, x.DedupFingerprint })
+                .HasFilter("\"Status\" = 0 AND \"DedupFingerprint\" IS NOT NULL")
+                .IsUnique()
+                .HasDatabaseName("ix_memory_review_queue_pending_dedup");
             e.HasIndex(x => x.CreatedAt).HasDatabaseName("ix_memory_review_queue_created_at");
             e.HasIndex(x => x.ApprovedProceduralRuleId);
         });

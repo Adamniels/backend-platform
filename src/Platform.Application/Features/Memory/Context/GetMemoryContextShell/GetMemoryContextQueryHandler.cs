@@ -1,16 +1,18 @@
 using Platform.Application.Abstractions.Memory.Context;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Context.GetMemoryContextShell;
 
-public sealed class GetMemoryContextQueryHandler(IMemoryContextProvider provider)
+public sealed class GetMemoryContextQueryHandler(
+    IMemoryContextProvider provider,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<MemoryContextV1Dto> HandleAsync(
         GetMemoryContextQuery query,
         CancellationToken cancellationToken = default)
     {
-        var id = query.UserId is 0 ? MemoryUser.DefaultId : query.UserId;
+        var id = userResolver.Resolve(query.UserId);
         var request = new MemoryContextRequest(
             id,
             query.TaskDescription,

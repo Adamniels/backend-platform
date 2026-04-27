@@ -1,21 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
-using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Review;
-using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
-using Platform.Domain.Features.Memory.ValueObjects;
+using Platform.Infrastructure.Features.Memory.Review.Approval;
 using Platform.Infrastructure.Persistence;
 
 namespace Platform.Infrastructure.Features.Memory.Review;
 
 public sealed class EfMemoryReviewService(
     PlatformDbContext db,
-    IProceduralRuleService proceduralRules,
-    ISemanticMemoryService semanticService,
-    IMemorySemanticMergeService semanticMerge)
+    IMemoryReviewApprovalHandlerResolver approvalHandlerResolver)
     : IMemoryReviewService
 {
     public async Task<MemoryReviewQueueItem> CreatePendingAsync(
@@ -71,61 +66,15 @@ public sealed class EfMemoryReviewService(
             }
 
             var at = DateTimeOffset.UtcNow;
-            long? semanticId = null;
-            long? proceduralRuleId = null;
-            switch (row.ProposalType)
-            {
-                case MemoryReviewProposalType.NewSemantic:
-                    var payload = MemoryReviewProposalJson.ParseNewSemantic(row.ProposedChangeJson);
-                    semanticId = await UpsertSemanticFromNewSemanticProposalAsync(
-                        userId,
-                        payload,
-                        at,
-                        cancellationToken)
-                        .ConfigureAwait(false);
-                    break;
-                case MemoryReviewProposalType.NewProceduralRule:
-                    var procPayload = MemoryReviewProposalJson.ParseNewProceduralRule(row.ProposedChangeJson);
-                    proceduralRuleId = await proceduralRules
-                        .ApplyApprovedNewProceduralProposalAsync(userId, procPayload, at, cancellationToken)
-                        .ConfigureAwait(false);
-                    break;
-                case MemoryReviewProposalType.ArchiveStaleSemantic:
-                    var archivePayload = MemoryReviewProposalJson.ParseArchiveStaleSemantic(row.ProposedChangeJson);
-                    var archived = await semanticService
-                        .ArchiveAsync(archivePayload.SemanticMemoryId, userId, cancellationToken)
-                        .ConfigureAwait(false);
-                    semanticId = archived.Id;
-                    break;
-                case MemoryReviewProposalType.MergeDuplicate:
-                case MemoryReviewProposalType.MergeSemanticCandidates:
-                    var mergePayload = MemoryReviewProposalJson.ParseMergeSemanticCandidates(row.ProposedChangeJson);
-                    semanticId = await semanticMerge
-                        .MergeApprovedAsync(
-                            userId,
-                            mergePayload.SourceSemanticIds,
-                            mergePayload.CanonicalSemanticId,
-                            mergePayload.ResultingClaim,
-                            mergePayload.Domain,
-                            at,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                    break;
-                case MemoryReviewProposalType.ContradictionDetected:
-                    var contradictionPayload = MemoryReviewProposalJson.ParseContradictionDetected(row.ProposedChangeJson);
-                    semanticId = contradictionPayload.SemanticMemoryId;
-                    break;
-                case MemoryReviewProposalType.AdjustConfidence:
-                case MemoryReviewProposalType.Unspecified:
-                default:
-                    throw new MemoryDomainException(
-                        $"Proposal type {row.ProposalType} is not supported for approval in v1.");
-            }
+            var approval = await approvalHandlerResolver
+                .Resolve(row.ProposalType)
+                .ApproveAsync(row, userId, at, cancellationToken)
+                .ConfigureAwait(false);
 
-            row.Approve(at, semanticId, proceduralRuleId, reviewNotes);
+            row.Approve(at, approval.SemanticMemoryId, approval.ProceduralRuleId, reviewNotes);
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return new MemoryReviewApprovalResult(semanticId, proceduralRuleId);
+            return approval;
         }
         catch
         {
@@ -168,69 +117,33 @@ public sealed class EfMemoryReviewService(
             throw new MemoryDomainException("Review item was not found for this user.");
         }
 
+        if (proposedChangeJson is not null)
+        {
+            MemoryReviewProposalJson.ValidateForProposalType(row.ProposalType, proposedChangeJson);
+        }
+
         row.ApplyPendingEdits(title, summary, proposedChangeJson, DateTimeOffset.UtcNow);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> HasPendingWithEvidenceSubstringAsync(
+    public Task<bool> HasPendingWithFingerprintAsync(
         int userId,
-        string evidenceSubstring,
+        MemoryReviewProposalType proposalType,
+        string dedupFingerprint,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(evidenceSubstring))
+        if (string.IsNullOrWhiteSpace(dedupFingerprint))
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        var texts = await db.MemoryReviewQueueItems
+        return db.MemoryReviewQueueItems
             .AsNoTracking()
-            .Where(x => x.UserId == userId && x.Status == MemoryReviewStatus.Pending)
-            .Select(x => x.EvidenceJson)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return texts.Any(
-            t => t is not null && t.Contains(evidenceSubstring, StringComparison.Ordinal));
-    }
-
-    private async Task<long> UpsertSemanticFromNewSemanticProposalAsync(
-        int userId,
-        NewSemanticMemoryProposalV1 payload,
-        DateTimeOffset at,
-        CancellationToken cancellationToken)
-    {
-        var key = payload.Key.Trim();
-        var claim = payload.Claim.Trim();
-        var domain = string.IsNullOrWhiteSpace(payload.Domain) ? null : payload.Domain.Trim();
-        var conf = MemoryValueConstraints.Clamp01(payload.InitialConfidence);
-        var existing = await db.SemanticMemories
-            .Where(
-                s => s.UserId == userId &&
-                    s.Key.ToLower() == key.ToLower() &&
-                    (s.Status == SemanticMemoryStatus.Active || s.Status == SemanticMemoryStatus.PendingReview))
-            .OrderByDescending(s => s.UpdatedAt)
-            .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
-        if (existing is not null)
-        {
-            existing.ApplyUserApprovedRevision(
-                claim,
-                conf,
-                AuthorityWeight.UserApprovedSemantic,
-                at);
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return existing.Id;
-        }
-
-        var created = SemanticMemory.CreateInitial(
-            userId,
-            key,
-            claim,
-            conf,
-            AuthorityWeight.UserApprovedSemantic,
-            domain,
-            at);
-        db.SemanticMemories.Add(created);
-        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return created.Id;
+            .AnyAsync(
+                x => x.UserId == userId &&
+                    x.ProposalType == proposalType &&
+                    x.Status == MemoryReviewStatus.Pending &&
+                    x.DedupFingerprint == dedupFingerprint.Trim(),
+                cancellationToken);
     }
 }

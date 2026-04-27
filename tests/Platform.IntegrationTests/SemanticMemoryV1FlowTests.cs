@@ -335,4 +335,79 @@ public sealed class SemanticMemoryV1FlowTests(PlatformWebApplicationFactory fact
         Assert.NotNull(body);
         Assert.Contains(body!.Conflicts, x => x.Kind == "contradicting_evidence" && x.RelatedEntityIds.Contains(sem.Id.ToString()));
     }
+
+    [Fact]
+    public async Task Explicit_profile_conflict_penalty_is_applied_on_write_time_recompute()
+    {
+        var keyA = $"sem-profile-conflict-{Guid.NewGuid():N}";
+        var keyB = $"sem-profile-neutral-{Guid.NewGuid():N}";
+        using var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                HandleCookies = true,
+            });
+
+        await client.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var profileRes = await client.PutAsJsonAsync(
+            new Uri("/api/v1/memory/explicit-profile", UriKind.Relative),
+            new UpdateProfileMemoryV1Request
+            {
+                CoreInterests = ["backend architecture"],
+                SecondaryInterests = [],
+                Goals = [],
+                Preferences = [],
+                ActiveProjects = [],
+                SkillLevels = [],
+            });
+        profileRes.EnsureSuccessStatusCode();
+
+        async Task<SemanticMemoryV1Dto> CreateSemanticAsync(string key, string claim, string eventType)
+        {
+            var evRes = await client.PostAsJsonAsync(
+                new Uri("/api/v1/memory/events", UriKind.Relative),
+                new IngestMemoryEventV1Request
+                {
+                    EventType = eventType,
+                    UserId = 1,
+                    OccurredAt = DateTimeOffset.UtcNow,
+                });
+            evRes.EnsureSuccessStatusCode();
+            var ev = await evRes.Content.ReadFromJsonAsync<MemoryEventCreatedV1Dto>(JsonReadOptions);
+
+            var createRes = await client.PostAsJsonAsync(
+                new Uri("/api/v1/memory/semantics", UriKind.Relative),
+                new CreateSemanticMemoryV1Request
+                {
+                    UserId = 1,
+                    Key = key,
+                    Claim = claim,
+                    Confidence = 0.7d,
+                    EventId = ev!.Id,
+                    EvidenceStrength = 0.85d,
+                    EvidenceSourceKind = "Workflow",
+                    EvidenceReliabilityWeight = 0.8d,
+                });
+            createRes.EnsureSuccessStatusCode();
+            var sem = await createRes.Content.ReadFromJsonAsync<SemanticMemoryV1Dto>(JsonReadOptions);
+            Assert.NotNull(sem);
+            return sem!;
+        }
+
+        var conflict = await CreateSemanticAsync(
+            keyA,
+            "user is not interested in backend architecture anymore",
+            "integration.profile.conflict");
+        var neutral = await CreateSemanticAsync(
+            keyB,
+            "user is interested in backend architecture and design",
+            "integration.profile.neutral");
+
+        Assert.True(
+            conflict.Confidence < neutral.Confidence,
+            "Conflict-aware recompute should penalize confidence on write when semantic claim conflicts with explicit profile.");
+    }
 }

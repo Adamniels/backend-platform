@@ -47,6 +47,37 @@ public sealed class MergeSemanticCandidatesProposalV1
     public string? Domain { get; set; }
 }
 
+public sealed class ConflictWithExplicitProfileProposalV1
+{
+    public long SemanticMemoryId { get; set; }
+    public string Key { get; set; } = "";
+    public string Claim { get; set; } = "";
+    public string ExplicitKind { get; set; } = "";
+    public string ExplicitText { get; set; } = "";
+}
+
+public sealed class SupersedeSemanticProposalV1
+{
+    public long SupersededSemanticId { get; set; }
+    public long CanonicalSemanticId { get; set; }
+    public string? Reason { get; set; }
+}
+
+public sealed class ReviseSemanticClaimProposalV1
+{
+    public long SemanticMemoryId { get; set; }
+    public string NewClaim { get; set; } = "";
+    public string? NewDomain { get; set; }
+    public double? NewConfidence { get; set; }
+}
+
+public sealed class ReviseProceduralRuleProposalV1
+{
+    public long BasisRuleId { get; set; }
+    public string RuleContent { get; set; } = "";
+    public string Source { get; set; } = "";
+}
+
 public sealed class ApproveMemoryReviewQueueItemV1Request
 {
     public string? ReviewNotes { get; set; }

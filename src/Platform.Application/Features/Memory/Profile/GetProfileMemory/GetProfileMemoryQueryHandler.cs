@@ -1,19 +1,20 @@
 using Platform.Application.Abstractions.Memory.Profile;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Profile.GetProfileMemory;
 
-public sealed class GetProfileMemoryQueryHandler(IExplicitUserProfileRepository profile)
+public sealed class GetProfileMemoryQueryHandler(
+    IExplicitUserProfileRepository profile,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<ProfileMemoryV1Dto> HandleAsync(
         GetProfileMemoryQuery query,
         CancellationToken cancellationToken = default)
     {
-        var id = query.UserId is 0
-            ? MemoryUser.DefaultId
-            : query.UserId;
+        var id = userResolver.Resolve(query.UserId);
 
         var row = await profile
             .GetByUserIdAsync(id, cancellationToken)

@@ -16,6 +16,7 @@ public sealed class MemoryReviewQueueItemDomainTests
             "summary",
             """{"kind":"NewSemantic","key":"a","claim":"b"}""",
             null,
+            null,
             2,
             t);
         row.Approve(t.AddMinutes(1), 99L, null, "ok");
@@ -30,6 +31,7 @@ public sealed class MemoryReviewQueueItemDomainTests
             "x",
             "y",
             """{"kind":"NewSemantic","key":"c","claim":"d"}""",
+            null,
             null,
             1,
             t);
@@ -50,6 +52,7 @@ public sealed class MemoryReviewQueueItemDomainTests
             "old",
             "sum",
             "{}",
+            null,
             null,
             0,
             t);

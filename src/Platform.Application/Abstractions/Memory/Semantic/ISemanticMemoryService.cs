@@ -72,6 +72,14 @@ public interface ISemanticMemoryService
         int userId,
         CancellationToken cancellationToken = default);
 
+    Task<SemanticMemory> ReviseClaimAsync(
+        long id,
+        int userId,
+        string newClaim,
+        string? newDomain,
+        double? newConfidence,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Case-insensitive key and normalized domain; only Active or PendingReview.</summary>
     Task<SemanticMemory?> FindActiveOrPendingByKeyDomainAsync(
         int userId,

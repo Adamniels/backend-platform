@@ -188,7 +188,11 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                 }
 
                 if (await reviews
-                    .HasPendingWithEvidenceSubstringAsync(command.UserId, fingerprint, cancellationToken)
+                    .HasPendingWithFingerprintAsync(
+                        command.UserId,
+                        MemoryReviewProposalType.NewSemantic,
+                        fingerprint,
+                        cancellationToken)
                     .ConfigureAwait(false))
                 {
                     logger.LogInformation(
@@ -225,6 +229,7 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
                     summary: "Automated nightly consolidation proposes a new semantic from episodic repetition.",
                     proposedChangeJson: MemoryReviewProposalJson.SerializeNewSemantic(proposal),
                     evidenceJson,
+                    dedupFingerprint: fingerprint,
                     policy.ReviewQueuePriority,
                     now);
                 _ = await reviews.CreatePendingAsync(item, cancellationToken).ConfigureAwait(false);

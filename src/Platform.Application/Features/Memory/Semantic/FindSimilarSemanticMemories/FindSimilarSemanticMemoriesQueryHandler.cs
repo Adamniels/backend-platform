@@ -1,19 +1,19 @@
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 using Platform.Application.Features.Memory.Semantic;
 
 namespace Platform.Application.Features.Memory.Semantic.FindSimilarSemanticMemories;
 
-public sealed class FindSimilarSemanticMemoriesQueryHandler(ISemanticMemoryService semantics)
+public sealed class FindSimilarSemanticMemoriesQueryHandler(
+    ISemanticMemoryService semantics,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<IReadOnlyList<SemanticMemoryV1Dto>> HandleAsync(
         FindSimilarSemanticMemoriesQuery query,
         CancellationToken cancellationToken = default)
     {
-        var userId = query.UserId is 0
-            ? MemoryUser.DefaultId
-            : query.UserId;
+        var userId = userResolver.Resolve(query.UserId);
         var rows = await semantics
             .FindSimilarByKeyOrDomainAsync(
                 userId,

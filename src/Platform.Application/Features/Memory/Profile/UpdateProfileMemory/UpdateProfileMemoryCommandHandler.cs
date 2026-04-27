@@ -1,5 +1,6 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Profile;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
@@ -10,7 +11,8 @@ namespace Platform.Application.Features.Memory.Profile.UpdateProfileMemory;
 public sealed class UpdateProfileMemoryCommandHandler(
     IValidator<UpdateProfileMemoryCommand> validator,
     IExplicitUserProfileRepository profile,
-    GetProfileMemoryQueryHandler getProfile)
+    GetProfileMemoryQueryHandler getProfile,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<ProfileMemoryV1Dto> HandleAsync(
         UpdateProfileMemoryCommand command,
@@ -18,9 +20,7 @@ public sealed class UpdateProfileMemoryCommandHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
 
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
 
         var at = DateTimeOffset.UtcNow;
         var row = await profile

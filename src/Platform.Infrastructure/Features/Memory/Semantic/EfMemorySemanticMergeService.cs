@@ -47,7 +47,10 @@ public sealed class EfMemorySemanticMergeService(
             throw new MemoryDomainException("Resulting claim is required for semantic merge.");
         }
 
-        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        var ownsTransaction = db.Database.CurrentTransaction is null;
+        await using var tx = ownsTransaction
+            ? await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
+            : null;
         try
         {
             canonical.ApplyUserApprovedRevision(
@@ -100,12 +103,20 @@ public sealed class EfMemorySemanticMergeService(
 
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await RecomputeCanonicalAsync(userId, canonical, at, cancellationToken).ConfigureAwait(false);
-            await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
+            if (ownsTransaction)
+            {
+                await tx!.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             return canonical.Id;
         }
         catch
         {
-            await tx.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            if (ownsTransaction && tx is not null)
+            {
+                await tx.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             throw;
         }
     }

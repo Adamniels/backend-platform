@@ -1,6 +1,7 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Procedural;
 using Platform.Application.Abstractions.Memory.Review;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Application.Features.Memory.Review;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
@@ -11,16 +12,15 @@ namespace Platform.Application.Features.Memory.Procedural.PublishProceduralRuleV
 public sealed class PublishProceduralRuleVersionCommandHandler(
     IValidator<PublishProceduralRuleVersionCommand> validator,
     IProceduralRuleService procedural,
-    IMemoryReviewService reviews)
+    IMemoryReviewService reviews,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<PublishProceduralRuleVersionV1Response> HandleAsync(
         PublishProceduralRuleVersionCommand command,
         CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
         var detail = await procedural
             .GetDetailAsync(command.BasisRuleId, userId, cancellationToken)
             .ConfigureAwait(false);
@@ -51,6 +51,7 @@ public sealed class PublishProceduralRuleVersionCommandHandler(
                 $"Workflow «{detail.WorkflowType}» — confirm content update.",
                 json,
                 evidenceJson: null,
+                dedupFingerprint: null,
                 priority: detail.Priority,
                 at);
             var saved = await reviews.CreatePendingAsync(item, cancellationToken).ConfigureAwait(false);

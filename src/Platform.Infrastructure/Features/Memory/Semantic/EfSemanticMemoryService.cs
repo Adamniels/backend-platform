@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Platform.Application.Abstractions.Memory.Confidence;
+using Platform.Application.Abstractions.Memory.Contradictions;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
@@ -11,7 +12,8 @@ namespace Platform.Infrastructure.Features.Memory.Semantic;
 
 public sealed class EfSemanticMemoryService(
     PlatformDbContext db,
-    IMemoryConfidencePolicy confidencePolicy) : ISemanticMemoryService
+    IMemoryConfidencePolicy confidencePolicy,
+    ISemanticConflictEvaluationService semanticConflictEvaluation) : ISemanticMemoryService
 {
     public async Task<SemanticMemory> ArchiveAsync(
         long id,
@@ -83,7 +85,7 @@ public sealed class EfSemanticMemoryService(
         try
         {
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            await RecomputeConfidenceAsync(row, userId, at, conflictsWithExplicitProfile: false, cancellationToken)
+            await RecomputeConfidenceAsync(row, userId, at, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (DbUpdateException)
@@ -185,7 +187,7 @@ public sealed class EfSemanticMemoryService(
                 throw new MemoryDomainException("Could not link evidence to the new semantic memory.");
             }
 
-            await RecomputeConfidenceAsync(created, userId, at, conflictsWithExplicitProfile: false, cancellationToken)
+            await RecomputeConfidenceAsync(created, userId, at, cancellationToken)
                 .ConfigureAwait(false);
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             return created;
@@ -301,6 +303,23 @@ public sealed class EfSemanticMemoryService(
         return row;
     }
 
+    public async Task<SemanticMemory> ReviseClaimAsync(
+        long id,
+        int userId,
+        string newClaim,
+        string? newDomain,
+        double? newConfidence,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await LoadMutableAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var at = DateTimeOffset.UtcNow;
+        var confidence = newConfidence ?? row.Confidence;
+        row.ApplyUserApprovedRevision(newClaim, confidence, AuthorityWeight.UserApprovedSemantic, at);
+        row.Domain = string.IsNullOrWhiteSpace(newDomain) ? null : newDomain.Trim();
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return row;
+    }
+
     public async Task<SemanticMemory> SetConfidenceAsync(
         long id,
         int userId,
@@ -312,7 +331,7 @@ public sealed class EfSemanticMemoryService(
         if (fromInferredSource)
         {
             row.ThrowIfInferredMutationBlocked();
-            await RecomputeConfidenceAsync(row, userId, DateTimeOffset.UtcNow, conflictsWithExplicitProfile: false, cancellationToken)
+            await RecomputeConfidenceAsync(row, userId, DateTimeOffset.UtcNow, cancellationToken)
                 .ConfigureAwait(false);
             return row;
         }
@@ -358,7 +377,6 @@ public sealed class EfSemanticMemoryService(
         SemanticMemory row,
         int userId,
         DateTimeOffset at,
-        bool conflictsWithExplicitProfile,
         CancellationToken cancellationToken)
     {
         var signals = await (
@@ -378,6 +396,9 @@ public sealed class EfSemanticMemoryService(
             return;
         }
 
+        var conflictsWithExplicitProfile = await semanticConflictEvaluation
+            .ConflictsWithExplicitProfileAsync(userId, row.Id, cancellationToken)
+            .ConfigureAwait(false);
         var computed = confidencePolicy.Compute(row, signals, conflictsWithExplicitProfile, at);
         row.SetConfidence(computed.Confidence, at);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

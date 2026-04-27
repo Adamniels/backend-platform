@@ -1,6 +1,5 @@
 using System.Text.Json;
 using FluentValidation;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Events.IngestEvent;
 
@@ -23,9 +22,6 @@ public sealed class IngestMemoryEventCommandValidator : AbstractValidator<Ingest
         RuleFor(x => x.ProjectId)
             .MaximumLength(256)
             .When(x => !string.IsNullOrEmpty(x.ProjectId));
-        RuleFor(x => x.UserId)
-            .Must(id => id == 0 || id == MemoryUser.DefaultId)
-            .WithMessage("UserId must be omitted, 0, or 1 in the current deployment.");
         RuleFor(x => x.PayloadJson)
             .MaximumLength(MemoryEventPayloadLimits.MaxPayloadJsonChars)
             .When(x => !string.IsNullOrEmpty(x.PayloadJson))

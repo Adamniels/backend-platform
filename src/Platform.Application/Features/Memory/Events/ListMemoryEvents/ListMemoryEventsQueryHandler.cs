@@ -1,10 +1,12 @@
 using Platform.Application.Abstractions.Memory.Events;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Events.ListMemoryEvents;
 
-public sealed class ListMemoryEventsQueryHandler(IMemoryEventsReadRepository events)
+public sealed class ListMemoryEventsQueryHandler(
+    IMemoryEventsReadRepository events,
+    IMemoryUserContextResolver userResolver)
 {
     private const int MaxPayloadPreview = 180;
 
@@ -12,7 +14,7 @@ public sealed class ListMemoryEventsQueryHandler(IMemoryEventsReadRepository eve
         ListMemoryEventsQuery query,
         CancellationToken cancellationToken = default)
     {
-        var userId = query.UserId is 0 ? MemoryUser.DefaultId : query.UserId;
+        var userId = userResolver.Resolve(query.UserId);
         var rows = await events
             .ListRecentForUserAsync(userId, query.Take, cancellationToken)
             .ConfigureAwait(false);

@@ -1,5 +1,4 @@
 using FluentValidation;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.ReviewQueue.PatchItem;
 
@@ -7,9 +6,6 @@ public sealed class PatchReviewQueueItemCommandValidator : AbstractValidator<Pat
 {
     public PatchReviewQueueItemCommandValidator()
     {
-        RuleFor(x => x.UserId)
-            .Must(id => id == 0 || id == MemoryUser.DefaultId)
-            .WithMessage("UserId must be omitted, 0, or 1 in the current deployment.");
         RuleFor(x => x)
             .Must(
                 c => !string.IsNullOrWhiteSpace(c.Title) || c.Summary is not null ||

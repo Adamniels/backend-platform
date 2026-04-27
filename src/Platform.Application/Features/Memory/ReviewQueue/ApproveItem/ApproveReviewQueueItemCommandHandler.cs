@@ -1,18 +1,18 @@
 using Platform.Application.Abstractions.Memory.Review;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.ReviewQueue.ApproveItem;
 
-public sealed class ApproveReviewQueueItemCommandHandler(IMemoryReviewService reviews)
+public sealed class ApproveReviewQueueItemCommandHandler(
+    IMemoryReviewService reviews,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<ApproveMemoryReviewQueueItemV1Response> HandleAsync(
         ApproveReviewQueueItemCommand command,
         CancellationToken cancellationToken = default)
     {
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
         var r = await reviews
             .ApproveAsync(command.ReviewItemId, userId, command.ReviewNotes, cancellationToken)
             .ConfigureAwait(false);

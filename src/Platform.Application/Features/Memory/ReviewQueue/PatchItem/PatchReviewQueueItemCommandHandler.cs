@@ -1,24 +1,23 @@
 using FluentValidation;
 using Platform.Application.Abstractions.Memory.Review;
+using Platform.Application.Abstractions.Memory.Users;
 using Platform.Application.Features.Memory.ReviewQueue;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.ReviewQueue.PatchItem;
 
 public sealed class PatchReviewQueueItemCommandHandler(
     IValidator<PatchReviewQueueItemCommand> validator,
-    IMemoryReviewService reviews)
+    IMemoryReviewService reviews,
+    IMemoryUserContextResolver userResolver)
 {
     public async Task<MemoryReviewQueueItemV1Dto> HandleAsync(
         PatchReviewQueueItemCommand command,
         CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
-        var userId = command.UserId is 0
-            ? MemoryUser.DefaultId
-            : command.UserId;
+        var userId = userResolver.Resolve(command.UserId);
         await reviews
             .UpdatePendingAsync(
                 command.ReviewItemId,

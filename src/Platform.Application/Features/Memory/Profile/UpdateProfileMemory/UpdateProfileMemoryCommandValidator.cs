@@ -1,6 +1,5 @@
 using FluentValidation;
 using Platform.Domain.Features.Memory;
-using Platform.Domain.Features.Memory.Entities;
 
 namespace Platform.Application.Features.Memory.Profile.UpdateProfileMemory;
 
@@ -8,10 +7,6 @@ public sealed class UpdateProfileMemoryCommandValidator : AbstractValidator<Upda
 {
     public UpdateProfileMemoryCommandValidator()
     {
-        RuleFor(x => x.UserId)
-            .Must(id => id == 0 || id == MemoryUser.DefaultId)
-            .WithMessage("UserId must be omitted, 0, or 1 in the current deployment.");
-
         RuleFor(x => x.CoreInterests)
             .NotNull()
             .Must(x => x!.Count <= ExplicitUserProfileContent.MaxListSize)
