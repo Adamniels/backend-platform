@@ -72,7 +72,7 @@ Table **`memory_consolidation_runs`** ([02-db-schema.md](02-db-schema.md)): `win
 **Environment** (see `workers-platform/.env.example`):
 
 - `PLATFORM_API_BASE_URL` — e.g. `http://localhost:5120` (matches `Platform.Api` http profile).
-- `MEMORY_WORKER_SERVICE_TOKEN` — must match `MemoryWorker:ServiceToken` on the API host.
+- `PLATFORM_INTERNAL_SERVICE_TOKEN` (legacy alias `MEMORY_WORKER_SERVICE_TOKEN`) — shared Bearer for all internal worker HTTP calls; must match `PlatformWorkers:ServiceToken` on the API host.
 - `CONSOLIDATION_PRIMARY_USER_ID` — default `1`.
 
 **Activity** uses **httpx** `POST` with JSON body `{ "userId": … }` and logs status / counts.
@@ -97,7 +97,7 @@ Adjust timezone/calendar policy to match product (UTC midnight is a common defau
 
 ## Operations checklist
 
-1. Set **`MemoryWorker:ServiceToken`** on the API and **`MEMORY_WORKER_SERVICE_TOKEN`** on workers (secret manager in prod).
+1. Set **`PlatformWorkers:ServiceToken`** on the API and the same secret as **`PLATFORM_INTERNAL_SERVICE_TOKEN`** (or legacy **`MEMORY_WORKER_SERVICE_TOKEN`**) on workers (secret manager in prod).
 2. Run DB migrations (`memory_consolidation_runs`).
 3. Deploy worker with both queues; verify Temporal schedule points at **`memory-consolidation`**.
 4. Watch API logs (`ExecuteNightlyMemoryConsolidationCommandHandler`) and Temporal run history.

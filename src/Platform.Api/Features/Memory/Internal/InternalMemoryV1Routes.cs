@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Platform.Application.Configuration;
 using Platform.Application.Features.Memory.Consolidation.Nightly;
+using Platform.Application.Features.Memory.Context.GetMemoryContextV1;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
 
@@ -13,6 +14,30 @@ public static class InternalMemoryV1Routes
     {
         var group = app.MapGroup("/api/internal/v1/memory")
             .WithTags("Internal Memory Worker");
+
+        group.MapPost(
+                "context",
+                async (
+                    GetMemoryContextV1Request? body,
+                    PostMemoryContextRequestHandler handler,
+                    IOptions<PlatformWorkerOptions> workerOptions,
+                    CancellationToken ct) =>
+                {
+                    var w = body ?? new GetMemoryContextV1Request();
+                    var userId = w.UserId is null or 0 ? workerOptions.Value.PrimaryUserId : w.UserId.Value;
+                    var merged = new GetMemoryContextV1Request
+                    {
+                        UserId = userId,
+                        TaskDescription = w.TaskDescription,
+                        WorkflowType = w.WorkflowType,
+                        ProjectId = w.ProjectId,
+                        Domain = w.Domain,
+                        IncludeVectorRecall = w.IncludeVectorRecall,
+                    };
+                    var res = await handler.HandleAsync(merged, ct).ConfigureAwait(false);
+                    return Results.Ok(res);
+                })
+            .DisableAntiforgery();
 
         group.MapPost(
                 "consolidation/nightly",
