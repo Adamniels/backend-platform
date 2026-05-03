@@ -15,8 +15,12 @@ public sealed record CreateSideLearningSessionV1Response(
 public sealed record SideLearningSessionSummaryV1Dto(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("phase")] string Phase,
+    [property: JsonPropertyName("selectedTopicTitle")] string? SelectedTopicTitle,
     [property: JsonPropertyName("createdAt")] string CreatedAt,
     [property: JsonPropertyName("updatedAt")] string UpdatedAt);
+
+public sealed record SideLearningSessionListPageV1Dto(
+    [property: JsonPropertyName("items")] IReadOnlyList<SideLearningSessionSummaryV1Dto> Items);
 
 public sealed record SideLearningSessionV1Dto(
     [property: JsonPropertyName("id")] string Id,

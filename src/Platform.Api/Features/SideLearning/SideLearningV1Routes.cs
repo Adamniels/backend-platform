@@ -1,4 +1,5 @@
 using Platform.Application.Features.SideLearning.Sessions.Create;
+using Platform.Application.Features.SideLearning.Sessions.Delete;
 using Platform.Application.Features.SideLearning.Sessions.Get;
 using Platform.Application.Features.SideLearning.Sessions.List;
 using Platform.Application.Features.SideLearning.Sessions.Progress;
@@ -32,8 +33,20 @@ public static class SideLearningV1Routes
 
         v1.MapGet(
             "side-learning/sessions",
-            async (ListSideLearningSessionsQueryHandler h, CancellationToken ct) =>
-                Results.Ok(await h.HandleAsync(new ListSideLearningSessionsQuery(), ct).ConfigureAwait(false)));
+            async (string? lifecycle, ListSideLearningSessionsQueryHandler h, CancellationToken ct) =>
+            {
+                try
+                {
+                    var page = await h
+                        .HandleAsync(new ListSideLearningSessionsQuery(lifecycle ?? ""), ct)
+                        .ConfigureAwait(false);
+                    return Results.Ok(page);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.BadRequest(new { error = ex.Message });
+                }
+            });
 
         v1.MapGet(
             "side-learning/sessions/{id}",
@@ -41,6 +54,14 @@ public static class SideLearningV1Routes
             {
                 var dto = await h.HandleAsync(new GetSideLearningSessionQuery(id), ct).ConfigureAwait(false);
                 return dto is null ? Results.NotFound() : Results.Ok(dto);
+            });
+
+        v1.MapDelete(
+            "side-learning/sessions/{id}",
+            async (string id, DeleteSideLearningSessionCommandHandler h, CancellationToken ct) =>
+            {
+                var deleted = await h.HandleAsync(new DeleteSideLearningSessionCommand(id), ct).ConfigureAwait(false);
+                return deleted ? Results.NoContent() : Results.NotFound();
             });
 
         v1.MapPost(

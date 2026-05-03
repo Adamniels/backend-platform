@@ -22,17 +22,48 @@ public sealed class SideLearningSessionRepository(PlatformDbContext db) : ISideL
     public Task<SideLearningSession?> GetTrackedByIdAsync(string id, CancellationToken cancellationToken = default) =>
         db.SideLearningSessions.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyList<SideLearningSession>> ListForUserAsync(
+    public async Task<IReadOnlyList<SideLearningSession>> ListForUserByLifecycleAsync(
         int userId,
+        string lifecycle,
         int take,
-        CancellationToken cancellationToken = default) =>
-        await db.SideLearningSessions.AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderByDescending(x => x.CreatedAt)
+        CancellationToken cancellationToken = default)
+    {
+        var q = db.SideLearningSessions.AsNoTracking().Where(x => x.UserId == userId);
+        if (string.Equals(lifecycle, "ongoing", StringComparison.OrdinalIgnoreCase))
+        {
+            q = q.Where(x =>
+                x.Phase != SideLearningSessionPhase.Completed && x.Phase != SideLearningSessionPhase.Failed);
+        }
+        else
+        {
+            q = q.Where(x =>
+                x.Phase == SideLearningSessionPhase.Completed || x.Phase == SideLearningSessionPhase.Failed);
+        }
+
+        return await q
+            .OrderByDescending(x => x.UpdatedAt)
+            .ThenByDescending(x => x.Id)
             .Take(take)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+    }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         db.SaveChangesAsync(cancellationToken);
+
+    public async Task<bool> DeleteForUserAsync(
+        string id,
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await GetTrackedForUserAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        if (session is null)
+        {
+            return false;
+        }
+
+        db.SideLearningSessions.Remove(session);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
 }

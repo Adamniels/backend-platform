@@ -111,6 +111,9 @@ POST /api/v1/side-learning/sessions
 GET  /api/v1/side-learning/sessions/{id}
   Returns: current session state (phase + relevant data for that phase)
 
+DELETE /api/v1/side-learning/sessions/{id}
+  Removes the session for the current user in any phase. 204 if deleted; 404 if not found.
+
 POST /api/v1/side-learning/sessions/{id}/select-topic
   Body: { topicTitle: string, feedback?: string }
   Action: Sets SelectedTopicTitle + feedback, transitions to GeneratingSession,
@@ -125,8 +128,9 @@ POST /api/v1/side-learning/sessions/{id}/reflect
   Action: Saves reflection text, transitions to AnalyzingReflection,
           starts new WorkflowRun (Stage C)
 
-GET  /api/v1/side-learning/sessions
-  Returns: list of sessions (history view)
+GET  /api/v1/side-learning/sessions?lifecycle=ongoing|archive (required; 400 if missing/invalid)
+  Returns: { items: [...] }, max 50 rows, UpdatedAt desc then Id desc. `ongoing` = non-terminal phases; `archive` = completed or failed (history).
+  Each list item includes optional `selectedTopicTitle` (set after the user picks a topic) for display labels.
 ```
 
 ### New Internal API Endpoints (for workers)

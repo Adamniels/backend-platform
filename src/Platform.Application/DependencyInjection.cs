@@ -13,6 +13,7 @@ using Platform.Application.Features.SideLearning.Internal.PostReflectionInsights
 using Platform.Application.Features.SideLearning.Internal.PostSessionContent;
 using Platform.Application.Features.SideLearning.Internal.PostTopicProposals;
 using Platform.Application.Features.SideLearning.Sessions.Create;
+using Platform.Application.Features.SideLearning.Sessions.Delete;
 using Platform.Application.Features.SideLearning.Sessions.Get;
 using Platform.Application.Features.SideLearning.Sessions.List;
 using Platform.Application.Features.SideLearning.Sessions.Progress;
@@ -42,6 +43,7 @@ public static class DependencyInjection
             .AddScoped<ListNewsFeedQueryHandler>()
             .AddScoped<CreateSideLearningSessionCommandHandler>()
             .AddScoped<GetSideLearningSessionQueryHandler>()
+            .AddScoped<DeleteSideLearningSessionCommandHandler>()
             .AddScoped<ListSideLearningSessionsQueryHandler>()
             .AddScoped<SelectSideLearningTopicCommandHandler>()
             .AddScoped<RefreshSideLearningTopicProposalsCommandHandler>()

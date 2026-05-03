@@ -405,4 +405,186 @@ public sealed class SideLearningSessionsV1Tests(PlatformWebApplicationFactory fa
             new RefreshSideLearningTopicProposalsV1Request { Feedback = "nope" });
         Assert.Equal(HttpStatusCode.BadRequest, refreshRes.StatusCode);
     }
+
+    [Fact]
+    public async Task List_sessions_without_lifecycle_returns_bad_request()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var res = await userClient.GetAsync(new Uri("/api/v1/side-learning/sessions", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task List_sessions_invalid_lifecycle_returns_bad_request()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var res = await userClient.GetAsync(
+            new Uri("/api/v1/side-learning/sessions?lifecycle=all", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task List_sessions_ongoing_and_archive_partition()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var createRes = await userClient.PostAsJsonAsync(
+            new Uri("/api/v1/side-learning/sessions", UriKind.Relative),
+            new CreateSideLearningSessionV1Request { InitialPrompt = "Learn Kotlin" });
+        createRes.EnsureSuccessStatusCode();
+        var created = await createRes.Content.ReadFromJsonAsync<CreateSideLearningSessionV1Response>(JsonReadOptions);
+        Assert.NotNull(created);
+        var sessionId = created!.SessionId;
+
+        using var internalClient = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        internalClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ServiceToken);
+        (await internalClient.PostAsJsonAsync(
+            new Uri($"/api/internal/v1/side-learning/sessions/{sessionId}/proposals", UriKind.Relative),
+            new PostSideLearningTopicProposalsV1Request
+            {
+                Topics =
+                [
+                    new SideLearningTopicProposalV1Item
+                    {
+                        Title = "Kotlin coroutines",
+                        Rationale = "R",
+                        EstimatedMinutes = 25,
+                        Difficulty = "intermediate",
+                        TargetSkillGap = "async",
+                    },
+                ],
+            })).EnsureSuccessStatusCode();
+
+        var ongoingRes = await userClient.GetAsync(
+            new Uri("/api/v1/side-learning/sessions?lifecycle=ongoing", UriKind.Relative));
+        ongoingRes.EnsureSuccessStatusCode();
+        var ongoingPage = await ongoingRes.Content.ReadFromJsonAsync<SideLearningSessionListPageV1Dto>(JsonReadOptions);
+        Assert.NotNull(ongoingPage);
+        Assert.Contains(
+            ongoingPage!.Items,
+            s => s.Id == sessionId && s.Phase == "awaitingTopicSelection" && s.SelectedTopicTitle is null);
+
+        var archiveRes = await userClient.GetAsync(
+            new Uri("/api/v1/side-learning/sessions?lifecycle=archive", UriKind.Relative));
+        archiveRes.EnsureSuccessStatusCode();
+        var archivePage = await archiveRes.Content.ReadFromJsonAsync<SideLearningSessionListPageV1Dto>(JsonReadOptions);
+        Assert.NotNull(archivePage);
+        Assert.DoesNotContain(archivePage!.Items, s => s.Id == sessionId);
+    }
+
+    [Fact]
+    public async Task List_sessions_includes_selected_topic_title_after_select_topic()
+    {
+        await using var scopedFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                foreach (var d in services.Where(d => d.ServiceType == typeof(IWorkflowStarter)).ToList())
+                {
+                    services.Remove(d);
+                }
+
+                services.AddSingleton<IWorkflowStarter, StubTemporalWorkflowStarter>();
+            });
+        });
+
+        using var userClient = scopedFactory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var createRes = await userClient.PostAsJsonAsync(
+            new Uri("/api/v1/side-learning/sessions", UriKind.Relative),
+            new CreateSideLearningSessionV1Request { InitialPrompt = "Learn Swift" });
+        createRes.EnsureSuccessStatusCode();
+        var created = await createRes.Content.ReadFromJsonAsync<CreateSideLearningSessionV1Response>(JsonReadOptions);
+        Assert.NotNull(created);
+        var sessionId = created!.SessionId;
+
+        using var internalClient = scopedFactory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        internalClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ServiceToken);
+        (await internalClient.PostAsJsonAsync(
+            new Uri($"/api/internal/v1/side-learning/sessions/{sessionId}/proposals", UriKind.Relative),
+            new PostSideLearningTopicProposalsV1Request
+            {
+                Topics =
+                [
+                    new SideLearningTopicProposalV1Item
+                    {
+                        Title = "Swift concurrency",
+                        Rationale = "R",
+                        EstimatedMinutes = 30,
+                        Difficulty = "intermediate",
+                        TargetSkillGap = "async",
+                    },
+                ],
+            })).EnsureSuccessStatusCode();
+
+        (await userClient.PostAsJsonAsync(
+            new Uri($"/api/v1/side-learning/sessions/{sessionId}/select-topic", UriKind.Relative),
+            new SelectSideLearningTopicV1Request { TopicTitle = "Swift concurrency", Feedback = null })).EnsureSuccessStatusCode();
+
+        var listRes = await userClient.GetAsync(
+            new Uri("/api/v1/side-learning/sessions?lifecycle=ongoing", UriKind.Relative));
+        listRes.EnsureSuccessStatusCode();
+        var page = await listRes.Content.ReadFromJsonAsync<SideLearningSessionListPageV1Dto>(JsonReadOptions);
+        Assert.NotNull(page);
+        var row = page!.Items.Single(s => s.Id == sessionId);
+        Assert.Equal("Swift concurrency", row.SelectedTopicTitle);
+    }
+
+    [Fact]
+    public async Task Delete_session_returns_no_content_and_get_returns_not_found()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var createRes = await userClient.PostAsJsonAsync(
+            new Uri("/api/v1/side-learning/sessions", UriKind.Relative),
+            new CreateSideLearningSessionV1Request { InitialPrompt = "Learn Rust" });
+        createRes.EnsureSuccessStatusCode();
+        var created = await createRes.Content.ReadFromJsonAsync<CreateSideLearningSessionV1Response>(JsonReadOptions);
+        Assert.NotNull(created);
+        var sessionId = created!.SessionId;
+
+        var delRes = await userClient.DeleteAsync(
+            new Uri($"/api/v1/side-learning/sessions/{sessionId}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NoContent, delRes.StatusCode);
+
+        var getRes = await userClient.GetAsync(new Uri($"/api/v1/side-learning/sessions/{sessionId}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NotFound, getRes.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_unknown_session_returns_not_found()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var delRes = await userClient.DeleteAsync(
+            new Uri("/api/v1/side-learning/sessions/sl-does-not-exist", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NotFound, delRes.StatusCode);
+    }
 }
