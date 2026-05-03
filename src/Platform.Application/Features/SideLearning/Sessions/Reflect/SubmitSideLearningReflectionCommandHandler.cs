@@ -53,6 +53,7 @@ public sealed class SubmitSideLearningReflectionCommandHandler(
             workflowRunId = run.Id,
             stage = "analyze_reflection",
             sessionId = session.Id,
+            topicTitle = session.SelectedTopicTitle,
             reflectionText = session.ReflectionText,
             sessionContentJson = session.SessionContentJson,
         };
