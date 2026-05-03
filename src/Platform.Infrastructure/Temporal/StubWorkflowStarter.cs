@@ -9,15 +9,17 @@ public sealed class StubWorkflowStarter(ILogger<StubWorkflowStarter> logger) : I
         string temporalTaskQueue,
         string workflowType,
         string workflowRunId,
+        object? input = null,
         CancellationToken cancellationToken = default)
     {
         var id = $"stub-{workflowRunId}";
         logger.LogInformation(
-            "Stub workflow start (Temporal not configured). Queue={Queue} Type={Type} RunId={RunId} StubId={StubId}",
+            "Stub workflow start (Temporal not configured). Queue={Queue} Type={Type} RunId={RunId} StubId={StubId} HasCustomInput={HasInput}",
             temporalTaskQueue,
             workflowType,
             workflowRunId,
-            id);
+            id,
+            input is not null);
         return Task.FromResult<string?>(id);
     }
 }

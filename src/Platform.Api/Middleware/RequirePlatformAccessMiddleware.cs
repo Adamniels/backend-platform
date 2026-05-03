@@ -19,7 +19,7 @@ public sealed class RequirePlatformAccessMiddleware(RequestDelegate next, ILogge
             return;
         }
 
-        if (context.Items.TryGetValue("MemoryInternalWorkerAuthenticated", out var internalAuth)
+        if (context.Items.TryGetValue("InternalWorkerAuthenticated", out var internalAuth)
             && internalAuth is true)
         {
             await next(context).ConfigureAwait(false);

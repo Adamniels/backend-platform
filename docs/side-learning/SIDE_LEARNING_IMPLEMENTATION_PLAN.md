@@ -151,29 +151,59 @@ POST /api/internal/v1/side-learning/sessions/{id}/reflection-insights
 
 ### Session Content Schema (jsonb)
 
+Four fixed sections in order. The worker always generates all four — no skipping, no reordering.
+
 ```json
 {
   "sections": [
     {
-      "id": "mental-model",
-      "label": "Mental Model",
+      "id": "goal",
+      "label": "Goal",
+      "estimatedMinutes": 5,
+      "type": "goal",
       "content": "...",
-      "type": "concept"
+      "example": "Understand how JWT works and implement a basic sign/verify flow"
     },
     {
-      "id": "build-it",
-      "label": "Build It",
+      "id": "context",
+      "label": "Context",
+      "estimatedMinutes": 15,
+      "type": "context",
       "content": "...",
-      "type": "hands-on"
+      "youtubeQuery": "..."
     },
     {
-      "id": "reflect",
-      "label": "Reflect",
+      "id": "hands-on",
+      "label": "Hands-on",
+      "estimatedMinutes": 60,
+      "type": "hands-on",
       "content": "...",
-      "type": "reflection-prompt"
+      "outputType": "code"
+    },
+    {
+      "id": "reflection",
+      "label": "Reflection",
+      "estimatedMinutes": 15,
+      "type": "reflection",
+      "prompts": [
+        "What did I learn?",
+        "What was confusing?",
+        "What would I improve?"
+      ]
     }
   ]
 }
+```
+
+**Section purposes for the LLM prompt:**
+
+The `goal` section is a single focused sentence describing what the user will understand or build by the end. It should be concrete and testable, not vague.
+
+The `context` section is a short AI-generated explanation focused on *why this matters*, not just *what it is*. The `youtubeQuery` field is a suggested search string the frontend can use to surface a relevant video — the worker does not fetch or embed a URL directly.
+
+The `hands-on` section always produces a tangible output: code, a diagram, structured notes, or a small working demo. The `outputType` hints to the UI what kind of output to expect. The worker should make the task specific enough that the user knows exactly what to build.
+
+The `reflection` section is presented as a prompt after the user finishes the hands-on. The three questions are fixed, but the worker can add a fourth context-specific question if the topic warrants it (e.g. "How does this relate to X you've been working on?"). This section is what gets submitted back to Stage C for reflection analysis.
 ```
 
 ---
@@ -258,7 +288,7 @@ async def run(self, input: SideLearningWorkflowInput) -> WorkflowRunResult:
 **`generate_learning_session`**
 - Fetches memory context again with topic title as `taskDescription`
 - Builds a prompt including: user's chosen topic, their optional feedback ("make it more advanced"), profile skill levels, relevant past sessions (vector recalls), semantic memories about learning style, procedural rules
-- Generates a session with 3+ sections: Mental Model, Build It, Reflect prompt
+- Generates a session with the four fixed sections: Goal, Context, Hands-on, Reflection
 - Returns structured `SessionContent`
 
 **`analyze_topic_selection_for_memory`**
@@ -326,9 +356,13 @@ The frontend replaces its mock-data flow with the real multi-step API flow. The 
    - Polls GET /api/v1/side-learning/sessions/{id} until phase === SessionReady
 
 4. Session View  (phase: SessionReady / InProgress)
-   - Existing section-by-section layout (already built with mocks)
-   - Each "Mark done" calls POST /api/v1/side-learning/sessions/{id}/progress
-   - When all sections done → shows "Write your reflection"
+   - Section-by-section layout: Goal → Context → Hands-on → Reflection
+   - Goal shows the focus statement and concrete example
+   - Context shows the explanation + a YouTube search link if a query was generated
+   - Hands-on shows the build task with a clear output expectation
+   - Reflection shows the three prompts as a text area (this becomes the reflection submission)
+   - Each section has a "Mark done" button calling POST /api/v1/side-learning/sessions/{id}/progress
+   - When all four sections are marked done → unlocks the reflection submit button
 
 5. Reflection  (phase: AwaitingReflection)
    - Text area: "What landed? What didn't? Any questions or new interests?"
@@ -415,7 +449,7 @@ After Stage B (session ready) and Stage C (reflection analyzed), there may be pr
 - [ ] History list wired to `GET /api/v1/side-learning/sessions`
 
 ### Iteration 7 — Polish + procedural rules
-- [ ] Seed 2–3 starter procedural rules for `side_learning` workflow type (e.g. "always include a hands-on section", "structure sessions as: mental model → build → reflect")
+- [ ] Seed 2–3 starter procedural rules for `side_learning` workflow type (e.g. "always structure sessions as: goal → context → hands-on → reflection", "hands-on section must always produce a tangible output")
 - [ ] Validate these rules come back in MemoryContext and the LLM prompt actually uses them
 - [ ] Add session progress tracking (what percent of sessions result in proposals, acceptance rate)
 
@@ -424,7 +458,9 @@ After Stage B (session ready) and Stage C (reflection analyzed), there may be pr
 ## Open Questions
 
 1. **LLM model choice for workers** — which model for topic generation vs session generation? Session generation is longer-form, topic generation can be faster/cheaper.
-2. **Section count and structure** — 3 sections (mental model, build, reflect) is the default. Should the worker be able to vary this based on topic complexity or user's available time from their profile?
+2. **Section time estimates** — the four sections have fixed labels and purposes, but the estimated minutes per section (especially hands-on at 45–60 min) could be adjusted by the worker based on the user's available time budget from their explicit profile. Worth wiring up when the profile time budget field is populated.
+Answer: this could be a default and the the user in the initial prompt can say how long they want the session to be
 3. **Re-propose flow** — when the user gives feedback on topic proposals and wants new ones, does that start a new WorkflowRun entirely, or does the same workflow re-run Stage A internally?
+Answer: is should rerun workflow A because all the proposals might be bad and the user might want completely new ones
 4. **Polling vs WebSocket** — frontend polls `GET /api/v1/side-learning/sessions/{id}` while workers are running. Acceptable for now. Worth revisiting if generation latency is high.
 5. **Minimum reflection length** — enforce a minimum before allowing submission, or leave it open? A very short reflection gives the analysis worker nothing useful.

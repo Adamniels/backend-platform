@@ -29,16 +29,16 @@ public sealed class IngestMemoryEventCommandValidatorTests
     }
 
     [Fact]
-    public void User_id_must_be_0_1_or_default()
+    public void User_id_is_not_validated_at_command_level()
     {
         var v = new IngestMemoryEventCommandValidator();
-        var bad = v.Validate(
+        var multiUser = v.Validate(
             new IngestMemoryEventCommand("evt", null, null, null, null, 2, null));
-        Assert.False(bad.IsValid);
+        Assert.True(multiUser.IsValid);
 
-        var good = v.Validate(
+        var defaultUser = v.Validate(
             new IngestMemoryEventCommand("evt", null, null, null, null, MemoryUser.DefaultId, null));
-        Assert.True(good.IsValid);
+        Assert.True(defaultUser.IsValid);
     }
 
     [Fact]

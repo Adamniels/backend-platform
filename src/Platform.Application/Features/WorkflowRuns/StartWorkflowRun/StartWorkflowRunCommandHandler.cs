@@ -26,8 +26,15 @@ public sealed class StartWorkflowRunCommandHandler(
         var now = DateTimeOffset.UtcNow;
         var run = await runs.AddPendingAsync(command.Name, now, cancellationToken).ConfigureAwait(false);
 
+        var workflowInput = new
+        {
+            name = command.Name,
+            workflowType = command.WorkflowType,
+            taskQueue,
+            workflowRunId = run.Id,
+        };
         var temporalId = await workflowStarter
-            .StartAsync(taskQueue, command.WorkflowType, run.Id, cancellationToken)
+            .StartAsync(taskQueue, command.WorkflowType, run.Id, workflowInput, cancellationToken)
             .ConfigureAwait(false);
 
         run.Status = temporalId is null ? WorkflowRunStatus.Failed : WorkflowRunStatus.Running;

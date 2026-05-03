@@ -2,7 +2,7 @@ namespace Platform.Contracts.V1.Memory;
 
 public sealed class ExecuteNightlyMemoryConsolidationV1Request
 {
-    /// <summary>Omit to use <c>MemoryWorker:PrimaryUserId</c>.</summary>
+    /// <summary>Omit to use <c>PlatformWorkers:PrimaryUserId</c>.</summary>
     public int? UserId { get; set; }
 
     /// <summary>UTC calendar day that **ends** the window (exclusive). Default: today’s UTC date (so yesterday is processed).</summary>

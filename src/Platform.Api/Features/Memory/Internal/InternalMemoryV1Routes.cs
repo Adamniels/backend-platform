@@ -19,7 +19,7 @@ public static class InternalMemoryV1Routes
                 async (
                     ExecuteNightlyMemoryConsolidationV1Request? body,
                     ExecuteNightlyMemoryConsolidationCommandHandler handler,
-                    IOptions<MemoryWorkerOptions> workerOptions,
+                    IOptions<PlatformWorkerOptions> workerOptions,
                     CancellationToken ct) =>
                 {
                     var w = body ?? new ExecuteNightlyMemoryConsolidationV1Request();

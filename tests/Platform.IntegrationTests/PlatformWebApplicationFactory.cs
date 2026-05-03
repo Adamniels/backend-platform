@@ -19,7 +19,7 @@ public sealed class PlatformWebApplicationFactory : WebApplicationFactory<Progra
         builder.UseSetting("Platform:AccessKey", "integration-test-access-key");
         builder.UseSetting("Platform:CookieSecure", "false");
         builder.UseSetting("Platform:PublicHealth", "false");
-        builder.UseSetting("MemoryWorker:ServiceToken", "integration-memory-worker-token");
-        builder.UseSetting("MemoryWorker:PrimaryUserId", "1");
+        builder.UseSetting("PlatformWorkers:ServiceToken", "integration-memory-worker-token");
+        builder.UseSetting("PlatformWorkers:PrimaryUserId", "1");
     }
 }

@@ -12,7 +12,6 @@ using Platform.Domain.Features.Memory.ValueObjects;
 using Platform.Domain.Features.News;
 using Platform.Domain.Features.Profile;
 using Platform.Domain.Features.SavedItems;
-using Platform.Domain.Features.SideLearning;
 using Platform.Domain.Features.WorkflowRuns;
 using Platform.Infrastructure.Persistence;
 
@@ -172,8 +171,6 @@ file static class MockDatabaseSeed
                 Source = "Digest",
                 PublishedAt = tNews,
             });
-        db.Add(new SideLearningTopic { Id = "s1", Title = "Foundations", ProgressPercent = 40 });
-        db.Add(new SideLearningTopic { Id = "s2", Title = "Applied practice", ProgressPercent = 10 });
         db.Add(
             new SavedItem
             {

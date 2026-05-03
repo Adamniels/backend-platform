@@ -17,7 +17,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<PlatformUserSettings> UserSettings => Set<PlatformUserSettings>();
     public DbSet<WorkflowRun> WorkflowRuns => Set<WorkflowRun>();
     public DbSet<NewsItem> NewsItems => Set<NewsItem>();
-    public DbSet<SideLearningTopic> SideLearningTopics => Set<SideLearningTopic>();
+    public DbSet<SideLearningSession> SideLearningSessions => Set<SideLearningSession>();
     public DbSet<SavedItem> SavedItems => Set<SavedItem>();
     public DbSet<MemoryInsight> MemoryInsights => Set<MemoryInsight>();
     public DbSet<MemoryUser> MemoryUsers => Set<MemoryUser>();
@@ -85,14 +85,24 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
                 new NewsItem { Id = "n2", Title = "Another story placeholder", Source = "Digest", PublishedAt = t });
         });
 
-        modelBuilder.Entity<SideLearningTopic>(e =>
+        modelBuilder.Entity<SideLearningSession>(e =>
         {
+            e.ToTable("side_learning_sessions");
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasMaxLength(64);
-            e.Property(x => x.Title).HasMaxLength(512);
-            e.HasData(
-                new SideLearningTopic { Id = "s1", Title = "Foundations", ProgressPercent = 40 },
-                new SideLearningTopic { Id = "s2", Title = "Applied practice", ProgressPercent = 10 });
+            e.Property(x => x.InitialPrompt).HasMaxLength(4096);
+            e.Property(x => x.SelectedTopicTitle).HasMaxLength(512);
+            e.Property(x => x.SelectedTopicReason).HasMaxLength(4096);
+            e.Property(x => x.ReflectionText).HasMaxLength(16384);
+            e.Property(x => x.WorkflowRunId).HasMaxLength(64);
+            e.Property(x => x.TopicProposalsJson).HasColumnType("jsonb");
+            e.Property(x => x.SessionContentJson).HasColumnType("jsonb");
+            e.Property(x => x.SectionsProgressJson).HasColumnType("jsonb");
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasOne<MemoryUser>()
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SavedItem>(e =>

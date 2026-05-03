@@ -11,6 +11,7 @@ using Platform.Application.Configuration;
 using Platform.Api.Features;
 using Platform.Api.Features.Access;
 using Platform.Api.Features.Memory.Internal;
+using Platform.Api.Features.SideLearning.Internal;
 using Platform.Api.Middleware;
 using Platform.Application;
 using Platform.Infrastructure;
@@ -27,8 +28,8 @@ builder.Services.AddOptions<PlatformAccessOptions>()
 
 builder.Services.AddSingleton<PlatformAccessSessionService>();
 
-builder.Services.AddOptions<MemoryWorkerOptions>()
-    .Bind(builder.Configuration.GetSection(MemoryWorkerOptions.SectionName));
+builder.Services.AddOptions<PlatformWorkerOptions>()
+    .Bind(builder.Configuration.GetSection(PlatformWorkerOptions.SectionName));
 
 var dataProtectionKeysPath = builder.Configuration["Platform:DataProtectionKeysPath"];
 var dataProtection = builder.Services.AddDataProtection()
@@ -135,7 +136,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 }
 app.UseCors("platform");
 app.UseRateLimiter();
-app.UseMiddleware<InternalMemoryWorkerAuthenticationMiddleware>();
+app.UseMiddleware<InternalWorkerAuthenticationMiddleware>();
 app.UseMiddleware<RequirePlatformAccessMiddleware>();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
@@ -151,6 +152,7 @@ app.MapGet(
 app.MapAdminEndpoints();
 app.MapV1Endpoints();
 InternalMemoryV1Routes.Map(app);
+InternalSideLearningV1Routes.Map(app);
 
 app.Run();
 

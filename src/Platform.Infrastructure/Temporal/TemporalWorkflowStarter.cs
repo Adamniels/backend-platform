@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Platform.Application.Abstractions.Workflows;
@@ -8,6 +9,12 @@ namespace Platform.Infrastructure.Temporal;
 public sealed class TemporalWorkflowStarter(IConfiguration configuration, ILogger<TemporalWorkflowStarter> logger)
     : IWorkflowStarter
 {
+    private static readonly JsonSerializerOptions WorkflowPayloadJson = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     private TemporalClient? _client;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -15,15 +22,24 @@ public sealed class TemporalWorkflowStarter(IConfiguration configuration, ILogge
         string temporalTaskQueue,
         string workflowType,
         string workflowRunId,
+        object? input = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             var client = await GetOrCreateClientAsync(cancellationToken).ConfigureAwait(false);
             var workflowId = $"platform-{workflowRunId}";
+            var payloadObject = input ?? new
+            {
+                workflowRunId,
+                workflowType,
+                taskQueue = temporalTaskQueue,
+                name = workflowRunId,
+            };
+            var json = JsonSerializer.Serialize(payloadObject, WorkflowPayloadJson);
             await client.StartWorkflowAsync(
                     workflowType,
-                    [workflowRunId],
+                    [json],
                     new WorkflowOptions(id: workflowId, taskQueue: temporalTaskQueue))
                 .ConfigureAwait(false);
             logger.LogInformation(

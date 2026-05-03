@@ -5,17 +5,17 @@ using Platform.Application.Configuration;
 
 namespace Platform.Api.Middleware;
 
-/// <summary>Validates <c>Authorization: Bearer</c> for <c>/api/internal/v1/memory/*</c> using <see cref="MemoryWorkerOptions.ServiceToken"/>.</summary>
-public sealed class InternalMemoryWorkerAuthenticationMiddleware(
+/// <summary>Validates <c>Authorization: Bearer</c> for <c>/api/internal/v1/*</c> using <see cref="PlatformWorkerOptions.ServiceToken"/>.</summary>
+public sealed class InternalWorkerAuthenticationMiddleware(
     RequestDelegate next,
-    IOptions<MemoryWorkerOptions> options,
-    ILogger<InternalMemoryWorkerAuthenticationMiddleware> logger)
+    IOptions<PlatformWorkerOptions> options,
+    ILogger<InternalWorkerAuthenticationMiddleware> logger)
 {
-    private const string ItemKey = "MemoryInternalWorkerAuthenticated";
+    private const string ItemKey = "InternalWorkerAuthenticated";
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!context.Request.Path.StartsWithSegments("/api/internal/v1/memory", StringComparison.OrdinalIgnoreCase))
+        if (!context.Request.Path.StartsWithSegments("/api/internal/v1", StringComparison.OrdinalIgnoreCase))
         {
             await next(context).ConfigureAwait(false);
             return;
@@ -24,9 +24,9 @@ public sealed class InternalMemoryWorkerAuthenticationMiddleware(
         var configured = options.Value.ServiceToken ?? "";
         if (string.IsNullOrEmpty(configured))
         {
-            logger.LogWarning("Internal memory API disabled: MemoryWorker:ServiceToken is not configured.");
+            logger.LogWarning("Internal worker API disabled: {Section}:ServiceToken is not configured.", PlatformWorkerOptions.SectionName);
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            await context.Response.WriteAsync("Internal memory worker is not configured.", cancellationToken: context.RequestAborted).ConfigureAwait(false);
+            await context.Response.WriteAsync("Internal worker API is not configured.", cancellationToken: context.RequestAborted).ConfigureAwait(false);
             return;
         }
 
