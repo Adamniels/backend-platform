@@ -50,3 +50,8 @@ public sealed class SubmitSideLearningReflectionV1Request
 {
     public string? Reflection { get; set; }
 }
+
+public sealed class RefreshSideLearningTopicProposalsV1Request
+{
+    public string? Feedback { get; set; }
+}

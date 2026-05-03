@@ -3,6 +3,7 @@ using Platform.Application.Features.SideLearning.Sessions.Get;
 using Platform.Application.Features.SideLearning.Sessions.List;
 using Platform.Application.Features.SideLearning.Sessions.Progress;
 using Platform.Application.Features.SideLearning.Sessions.Reflect;
+using Platform.Application.Features.SideLearning.Sessions.RefreshTopicProposals;
 using Platform.Application.Features.SideLearning.Sessions.SelectTopic;
 using Platform.Contracts.V1.SideLearning;
 
@@ -52,6 +53,28 @@ public static class SideLearningV1Routes
                             .HandleAsync(
                                 new SelectSideLearningTopicCommand(id, body.TopicTitle ?? "", body.Feedback),
                                 ct)
+                            .ConfigureAwait(false);
+                        return Results.NoContent();
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return Results.BadRequest(new { error = ex.Message });
+                    }
+                })
+            .DisableAntiforgery();
+
+        v1.MapPost(
+                "side-learning/sessions/{id}/refresh-topic-proposals",
+                async (
+                    string id,
+                    RefreshSideLearningTopicProposalsV1Request? body,
+                    RefreshSideLearningTopicProposalsCommandHandler h,
+                    CancellationToken ct) =>
+                {
+                    try
+                    {
+                        await h
+                            .HandleAsync(new RefreshSideLearningTopicProposalsCommand(id, body?.Feedback), ct)
                             .ConfigureAwait(false);
                         return Results.NoContent();
                     }

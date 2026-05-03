@@ -17,6 +17,7 @@ using Platform.Application.Features.SideLearning.Sessions.Get;
 using Platform.Application.Features.SideLearning.Sessions.List;
 using Platform.Application.Features.SideLearning.Sessions.Progress;
 using Platform.Application.Features.SideLearning.Sessions.Reflect;
+using Platform.Application.Features.SideLearning.Sessions.RefreshTopicProposals;
 using Platform.Application.Features.SideLearning.Sessions.SelectTopic;
 using Platform.Application.Features.Stats.GetStats;
 using Platform.Application.Features.WorkflowRuns.ListWorkflowRuns;
@@ -43,6 +44,7 @@ public static class DependencyInjection
             .AddScoped<GetSideLearningSessionQueryHandler>()
             .AddScoped<ListSideLearningSessionsQueryHandler>()
             .AddScoped<SelectSideLearningTopicCommandHandler>()
+            .AddScoped<RefreshSideLearningTopicProposalsCommandHandler>()
             .AddScoped<UpdateSideLearningProgressCommandHandler>()
             .AddScoped<SubmitSideLearningReflectionCommandHandler>()
             .AddScoped<PostSideLearningTopicProposalsCommandHandler>()

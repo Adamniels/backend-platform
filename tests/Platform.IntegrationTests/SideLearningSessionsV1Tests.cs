@@ -294,4 +294,115 @@ public sealed class SideLearningSessionsV1Tests(PlatformWebApplicationFactory fa
         Assert.NotNull(doneState);
         Assert.Equal("completed", doneState!.Phase);
     }
+
+    [Fact]
+    public async Task Refresh_topic_proposals_when_awaiting_clears_topics_and_returns_proposing()
+    {
+        using var userClient = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var createRes = await userClient.PostAsJsonAsync(
+            new Uri("/api/v1/side-learning/sessions", UriKind.Relative),
+            new CreateSideLearningSessionV1Request { InitialPrompt = "Learn Python" });
+        createRes.EnsureSuccessStatusCode();
+        var created = await createRes.Content.ReadFromJsonAsync<CreateSideLearningSessionV1Response>(JsonReadOptions);
+        Assert.NotNull(created);
+        var sessionId = created!.SessionId;
+
+        using var internalClient = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        internalClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ServiceToken);
+        (await internalClient.PostAsJsonAsync(
+            new Uri($"/api/internal/v1/side-learning/sessions/{sessionId}/proposals", UriKind.Relative),
+            new PostSideLearningTopicProposalsV1Request
+            {
+                Topics =
+                [
+                    new SideLearningTopicProposalV1Item
+                    {
+                        Title = "Python typing",
+                        Rationale = "Foundations",
+                        EstimatedMinutes = 35,
+                        Difficulty = "intermediate",
+                        TargetSkillGap = "types",
+                    },
+                ],
+            })).EnsureSuccessStatusCode();
+
+        var refreshRes = await userClient.PostAsJsonAsync(
+            new Uri($"/api/v1/side-learning/sessions/{sessionId}/refresh-topic-proposals", UriKind.Relative),
+            new RefreshSideLearningTopicProposalsV1Request { Feedback = "Focus on async instead" });
+        refreshRes.EnsureSuccessStatusCode();
+
+        var getRes = await userClient.GetAsync(new Uri($"/api/v1/side-learning/sessions/{sessionId}", UriKind.Relative));
+        getRes.EnsureSuccessStatusCode();
+        var state = await getRes.Content.ReadFromJsonAsync<SideLearningSessionV1Dto>(JsonReadOptions);
+        Assert.NotNull(state);
+        Assert.Equal("proposingTopics", state!.Phase);
+        Assert.Equal("[]", state.TopicProposalsJson.Trim());
+        Assert.Contains("Focus on async instead", state.InitialPrompt ?? "", StringComparison.Ordinal);
+        Assert.Contains("[Topic proposal feedback]", state.InitialPrompt ?? "", StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Refresh_topic_proposals_when_wrong_phase_returns_bad_request()
+    {
+        await using var scopedFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                foreach (var d in services.Where(d => d.ServiceType == typeof(IWorkflowStarter)).ToList())
+                {
+                    services.Remove(d);
+                }
+
+                services.AddSingleton<IWorkflowStarter, StubTemporalWorkflowStarter>();
+            });
+        });
+
+        using var userClient = scopedFactory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
+        await userClient.PostAsJsonAsync(
+            new Uri("/api/admin/unlock", UriKind.Relative),
+            new UnlockRequest("integration-test-access-key"));
+
+        var createRes = await userClient.PostAsJsonAsync(
+            new Uri("/api/v1/side-learning/sessions", UriKind.Relative),
+            new CreateSideLearningSessionV1Request { InitialPrompt = "Learn Zig" });
+        createRes.EnsureSuccessStatusCode();
+        var created = await createRes.Content.ReadFromJsonAsync<CreateSideLearningSessionV1Response>(JsonReadOptions);
+        Assert.NotNull(created);
+        var sessionId = created!.SessionId;
+
+        using var internalClient = scopedFactory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        internalClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ServiceToken);
+        (await internalClient.PostAsJsonAsync(
+            new Uri($"/api/internal/v1/side-learning/sessions/{sessionId}/proposals", UriKind.Relative),
+            new PostSideLearningTopicProposalsV1Request
+            {
+                Topics =
+                [
+                    new SideLearningTopicProposalV1Item
+                    {
+                        Title = "Zig basics",
+                        Rationale = "R",
+                        EstimatedMinutes = 30,
+                        Difficulty = "intermediate",
+                        TargetSkillGap = "safety",
+                    },
+                ],
+            })).EnsureSuccessStatusCode();
+
+        (await userClient.PostAsJsonAsync(
+            new Uri($"/api/v1/side-learning/sessions/{sessionId}/select-topic", UriKind.Relative),
+            new SelectSideLearningTopicV1Request { TopicTitle = "Zig basics", Feedback = null })).EnsureSuccessStatusCode();
+
+        var refreshRes = await userClient.PostAsJsonAsync(
+            new Uri($"/api/v1/side-learning/sessions/{sessionId}/refresh-topic-proposals", UriKind.Relative),
+            new RefreshSideLearningTopicProposalsV1Request { Feedback = "nope" });
+        Assert.Equal(HttpStatusCode.BadRequest, refreshRes.StatusCode);
+    }
 }
