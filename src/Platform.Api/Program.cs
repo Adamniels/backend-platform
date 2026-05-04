@@ -130,9 +130,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// HttpsRedirection needs ASPNETCORE_HTTPS_PORT (or an https URL in launchSettings). The "http"
+// launch profile is HTTP-only, which triggers "Failed to determine the https port" at startup.
 if (!app.Environment.IsEnvironment("Testing"))
 {
-    app.UseHttpsRedirection();
+    var devHttpOnly =
+        app.Environment.IsDevelopment()
+        && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"));
+    if (!devHttpOnly)
+    {
+        app.UseHttpsRedirection();
+    }
 }
 app.UseCors("platform");
 app.UseRateLimiter();
