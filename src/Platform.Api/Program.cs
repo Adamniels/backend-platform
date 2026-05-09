@@ -84,20 +84,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
     await db.Database.MigrateAsync().ConfigureAwait(false);
-
-    // Self-heal singleton rows the application requires to function (idempotent).
-    // Runs on every boot so the API survives any out-of-band wipe (psql TRUNCATE,
-    // pg_restore from an old backup, dropped volume, etc.).
-    var baseline = await PlatformBaselineSeed.EnsureAsync(db).ConfigureAwait(false);
-    if (baseline.DatabaseWasEmpty)
-    {
-        scope.ServiceProvider
-            .GetRequiredService<ILoggerFactory>()
-            .CreateLogger("Platform.Bootstrap")
-            .LogInformation(
-                "Baseline seed inserted {InsertedRowCount} singleton row(s) on startup.",
-                baseline.InsertedRowCount);
-    }
 }
 
 app.UseExceptionHandler(errorApp =>

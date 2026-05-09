@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -13,9 +14,11 @@ using Platform.Infrastructure.Persistence;
 namespace Platform.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PlatformDbContext))]
-    partial class PlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260509182950_EmptySingletonBaselineHasData")]
+    partial class EmptySingletonBaselineHasData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,6 +81,32 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("InputNeededItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Detail = "How would you rate the difficulty and quality of your last session? This helps calibrate future recommendations.",
+                            Text = "Rate your last AI Ethics session",
+                            Type = "Rating",
+                            Urgent = true
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Detail = "Detected reading patterns suggesting interest in Quantum Computing. Add it to your interest profile?",
+                            Text = "Confirm new interest: Quantum Computing?",
+                            Type = "Confirm",
+                            Urgent = false
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Detail = "You have completed your current track. Select a new area to explore from your recommended topics.",
+                            Text = "Choose your next learning topic",
+                            Type = "Choose",
+                            Urgent = false
+                        });
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.Memory.Entities.ExplicitUserProfile", b =>
@@ -766,6 +795,48 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MemoryInsights");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Confirmed = true,
+                            Content = "You consistently engage with AI governance and regulation content over the past 6 weeks.",
+                            Label = "Recurring Interest",
+                            Strength = 94
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Confirmed = true,
+                            Content = "You prefer structured sessions under 60 minutes, with hands-on exercises.",
+                            Label = "Learning Pattern",
+                            Strength = 87
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Confirmed = false,
+                            Content = "Your reading behavior suggests growing interest in hardware-level AI acceleration.",
+                            Label = "Emerging Trend",
+                            Strength = 61
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Confirmed = false,
+                            Content = "Foundational probability and statistics appear underrepresented in your learning history.",
+                            Label = "Knowledge Gap",
+                            Strength = 78
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Confirmed = false,
+                            Content = "Based on your interests, a learning path toward AI Safety Research would match your profile well.",
+                            Label = "Recommended Path",
+                            Strength = 82
+                        });
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.News.NewsItem", b =>
@@ -790,6 +861,22 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("NewsItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "n1",
+                            PublishedAt = new DateTimeOffset(new DateTime(2026, 4, 2, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Source = "Wire",
+                            Title = "Sample headline (placeholder)"
+                        },
+                        new
+                        {
+                            Id = "n2",
+                            PublishedAt = new DateTimeOffset(new DateTime(2026, 4, 2, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Source = "Digest",
+                            Title = "Another story placeholder"
+                        });
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.Profile.PlatformProfile", b =>
@@ -818,7 +905,7 @@ namespace Platform.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = 1,
-                            DisplayName = "Operator",
+                            DisplayName = "",
                             Email = ""
                         });
                 });
@@ -874,6 +961,15 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SavedItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "sv1",
+                            Kind = "article",
+                            SavedAt = new DateTimeOffset(new DateTime(2026, 4, 3, 10, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Title = "Saved article (placeholder)"
+                        });
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.SideLearning.SideLearningSession", b =>
@@ -957,6 +1053,22 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WorkflowRuns");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "wr1",
+                            Name = "News intelligence",
+                            Status = 1,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 4, 1, 12, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        },
+                        new
+                        {
+                            Id = "wr2",
+                            Name = "Side learning enrichment",
+                            Status = 2,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 4, 1, 12, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        });
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.Memory.Entities.ExplicitUserProfile", b =>

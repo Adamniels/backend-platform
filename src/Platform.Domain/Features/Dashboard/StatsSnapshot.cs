@@ -1,7 +1,7 @@
 namespace Platform.Domain.Features.Dashboard;
 
 /// <summary>
-/// Optional persisted stats payload JSON (matches frontend StatsPayload shape). Not seeded; populated when a stats pipeline exists.
+/// Persisted stats payload JSON (matches frontend StatsPayload shape). Baseline row is empty arrays; updated when a stats pipeline exists.
 /// </summary>
 public sealed class StatsSnapshot
 {
