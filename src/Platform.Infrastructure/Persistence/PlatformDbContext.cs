@@ -203,7 +203,6 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Json).HasColumnType("TEXT");
-            e.HasData(new StatsSnapshot { Id = StatsSnapshot.SingletonKey, Json = StatsSeedJson.Value });
         });
 
         modelBuilder.ConfigureMemoryV1();

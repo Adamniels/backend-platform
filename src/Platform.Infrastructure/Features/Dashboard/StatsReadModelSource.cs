@@ -17,7 +17,12 @@ public sealed class StatsReadModelSource(PlatformDbContext db) : IStatsReadModel
     public async Task<StatsPayloadDto> GetAsync(CancellationToken cancellationToken = default)
     {
         var row = await db.StatsSnapshots.AsNoTracking()
-            .SingleAsync(x => x.Id == StatsSnapshot.SingletonKey, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == StatsSnapshot.SingletonKey, cancellationToken);
+        if (row is null)
+        {
+            return new StatsPayloadDto([], [], []);
+        }
+
         return JsonSerializer.Deserialize<StatsPayloadDto>(row.Json, JsonOptions) ?? new StatsPayloadDto([], [], []);
     }
 }

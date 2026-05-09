@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Platform.Domain.Features.Dashboard;
 using Platform.Domain.Features.Memory.Entities;
 using Platform.Domain.Features.Profile;
 
@@ -15,7 +14,7 @@ public static class PlatformBaselineSeed
     /// <summary>
     /// Ensures the baseline singletons exist:
     /// <see cref="MemoryUser"/> (DefaultId), <see cref="PlatformProfile"/>,
-    /// <see cref="PlatformUserSettings"/>, and the <see cref="StatsSnapshot"/> cache row.
+    /// and <see cref="PlatformUserSettings"/>.
     /// </summary>
     /// <param name="now">Optional timestamp used when newly inserting the <see cref="MemoryUser"/> row.
     /// Defaults to <see cref="DateTimeOffset.UtcNow"/>.</param>
@@ -51,16 +50,6 @@ public static class PlatformBaselineSeed
                 Id = PlatformUserSettings.SingletonKey,
                 Theme = "system",
                 DigestEmail = true,
-            });
-            inserted++;
-        }
-
-        if (!await db.StatsSnapshots.AnyAsync(x => x.Id == StatsSnapshot.SingletonKey, cancellationToken))
-        {
-            db.Add(new StatsSnapshot
-            {
-                Id = StatsSnapshot.SingletonKey,
-                Json = StatsSeedJson.Value,
             });
             inserted++;
         }
