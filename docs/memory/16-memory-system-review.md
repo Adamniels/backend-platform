@@ -85,7 +85,7 @@ Gaps vs the master architecture remain material for a 10-year product: **no grap
 - Domain updates for profile go through `UpdateProfileMemoryCommandHandler` and `ExplicitUserProfile` invariants.
 - **Residual risks:**
   - Any code with `PlatformDbContext` and credentials can still **insert** rows (ORM escape hatch). There is no row-level or DB-level “append-only only for events” enforcement.
-  - `Platform.DevData` and tests can mass-write; acceptable for dev, but worth noting for production governance.
+  - Tests can mass-write through `PlatformDbContext`; acceptable for test isolation, but worth noting for production governance.
 
 **Verdict:** **API surface** is controlled; **deeper enforcement** (DB policies, separate roles, or append-only `memory_events` grants) is out of scope today.
 
