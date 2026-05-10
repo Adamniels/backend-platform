@@ -75,6 +75,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.Id).HasMaxLength(64);
             e.Property(x => x.Title).HasMaxLength(1024);
             e.Property(x => x.Source).HasMaxLength(256);
+            e.Property(x => x.Url).HasMaxLength(4096);
+            e.Property(x => x.UrlHash).HasMaxLength(64);
+            e.Property(x => x.Body).HasColumnType("text");
+            e.Property(x => x.Author).HasMaxLength(512);
+            e.Property(x => x.SourceFeedUrl).HasMaxLength(2048);
+            e.HasIndex(x => x.UrlHash).IsUnique();
         });
 
         modelBuilder.Entity<SideLearningSession>(e =>

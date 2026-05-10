@@ -10,6 +10,12 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
     public async Task<IReadOnlyList<NewsItemSummaryDto>> ListFeedAsync(CancellationToken cancellationToken = default) =>
         await db.NewsItems.AsNoTracking()
             .OrderByDescending(x => x.PublishedAt)
-            .Select(x => new NewsItemSummaryDto(x.Id, x.Title, x.Source, x.PublishedAt.ToString("O")))
+            .Select(x => new NewsItemSummaryDto(
+                x.Id,
+                x.Title,
+                x.Source,
+                x.PublishedAt.ToString("O"),
+                string.IsNullOrEmpty(x.Url) ? null : x.Url,
+                string.IsNullOrEmpty(x.Body) ? null : x.Body))
             .ToListAsync(cancellationToken);
 }

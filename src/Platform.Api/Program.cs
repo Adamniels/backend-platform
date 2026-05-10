@@ -11,6 +11,7 @@ using Platform.Application.Configuration;
 using Platform.Api.Features;
 using Platform.Api.Features.Access;
 using Platform.Api.Features.Memory.Internal;
+using Platform.Api.Features.News.Internal;
 using Platform.Api.Features.SideLearning.Internal;
 using Platform.Api.Middleware;
 using Platform.Application;
@@ -160,6 +161,7 @@ app.MapGet(
 app.MapAdminEndpoints();
 app.MapV1Endpoints();
 InternalMemoryV1Routes.Map(app);
+InternalNewsV1Routes.Map(app);
 InternalSideLearningV1Routes.Map(app);
 
 app.Run();

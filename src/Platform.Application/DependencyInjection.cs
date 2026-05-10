@@ -5,6 +5,8 @@ using Platform.Application.Features.Access.UnlockSession;
 using Platform.Application.Features.Dashboard.GetSummary;
 using Platform.Application.Features.HumanInput.ListItems;
 using Platform.Application.Features.Memory.DependencyInjection;
+using Platform.Application.Features.News.DeleteItems;
+using Platform.Application.Features.News.Ingest;
 using Platform.Application.Features.News.ListFeed;
 using Platform.Application.Features.Profile.GetProfile;
 using Platform.Application.Features.Profile.GetSettings;
@@ -41,6 +43,8 @@ public static class DependencyInjection
             .AddScoped<GetProfileQueryHandler>()
             .AddScoped<GetUserSettingsQueryHandler>()
             .AddScoped<ListNewsFeedQueryHandler>()
+            .AddScoped<IngestNewsItemCommandHandler>()
+            .AddScoped<DeleteNewsItemsCommandHandler>()
             .AddScoped<CreateSideLearningSessionCommandHandler>()
             .AddScoped<GetSideLearningSessionQueryHandler>()
             .AddScoped<DeleteSideLearningSessionCommandHandler>()
