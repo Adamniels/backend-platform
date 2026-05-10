@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowRunRepository, WorkflowRunRepository>();
         services.AddScoped<IProfileReadRepository, ProfileReadRepository>();
         services.AddScoped<INewsReadRepository, NewsReadRepository>();
+        services.AddScoped<IUserInterestProvider, ExplicitProfileUserInterestProvider>();
         services.AddScoped<ISideLearningSessionRepository, SideLearningSessionRepository>();
         services.AddScoped<ISavedItemsReadRepository, SavedItemsReadRepository>();
         services.AddScoped<IHumanInputReadRepository, HumanInputReadRepository>();
