@@ -17,7 +17,8 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
                 x.Source,
                 x.PublishedAt.ToString("O"),
                 string.IsNullOrEmpty(x.Url) ? null : x.Url,
-                string.IsNullOrEmpty(x.Body) ? null : x.Body))
+                string.IsNullOrEmpty(x.Body) ? null : x.Body,
+                null))
             .ToListAsync(cancellationToken);
 
     public async Task<string?> GetBodyByIdAsync(string id, CancellationToken cancellationToken = default) =>
@@ -40,7 +41,8 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
                 x.Source,
                 x.PublishedAt.ToString("O"),
                 string.IsNullOrEmpty(x.Url) ? null : x.Url,
-                string.IsNullOrEmpty(x.Body) ? null : x.Body))
+                string.IsNullOrEmpty(x.Body) ? null : x.Body,
+                null))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
