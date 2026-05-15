@@ -2,7 +2,6 @@ using Platform.Api.Features.Memory.Context;
 using Platform.Api.Features.Memory.Documents;
 using Platform.Api.Features.Memory.Embeddings;
 using Platform.Api.Features.Memory.Events;
-using Platform.Api.Features.Memory.Legacy.Insights;
 using Platform.Api.Features.Memory.Module;
 using Platform.Api.Features.Memory.Profile;
 using Platform.Api.Features.Memory.Review;
@@ -24,6 +23,5 @@ public static class MemoryV1Routes
         ProfileMemoryV1Routes.Map(v1);
         SemanticMemoryV1Routes.Map(v1);
         ProceduralMemoryV1Routes.Map(v1);
-        MemoryInsightsV1Routes.Map(v1);
     }
 }

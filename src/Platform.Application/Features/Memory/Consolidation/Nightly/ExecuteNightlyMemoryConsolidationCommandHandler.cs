@@ -7,6 +7,7 @@ using Platform.Application.Abstractions.Memory.Maintenance;
 using Platform.Application.Abstractions.Memory.Review;
 using Platform.Application.Abstractions.Memory.Semantic;
 using Platform.Application.Features.Memory.Consolidation;
+using Platform.Application.Features.Memory.Exceptions;
 using Platform.Application.Features.Memory.Review;
 using Platform.Contracts.V1.Memory;
 using Platform.Domain.Features.Memory;
@@ -47,7 +48,7 @@ public sealed class ExecuteNightlyMemoryConsolidationCommandHandler(
 
         if (snapshot is { Status: MemoryConsolidationRunStatus.Running })
         {
-            throw new MemoryConflictException(
+            throw new MemoryApplicationException(
                 "A consolidation run with this idempotency key is already in progress.");
         }
 

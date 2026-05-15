@@ -6,5 +6,5 @@ public sealed record IngestNewsItemCommand(
     string Source,
     string Body,
     string? Author,
-    DateTimeOffset PublishedAt,
+    string PublishedAt,
     string? SourceFeedUrl);

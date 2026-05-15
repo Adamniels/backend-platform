@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Platform.Application.Configuration;
 using Platform.Application.Features.News.DeleteItems;
 using Platform.Application.Features.News.ListFeed;
 using Platform.Contracts.V1.News;
@@ -10,11 +12,13 @@ public static class NewsV1Routes
     {
         v1.MapGet(
             "news/feed",
-            async (ListNewsFeedQueryHandler h, CancellationToken ct) =>
+            async (
+                ListNewsFeedQueryHandler h,
+                IOptions<PlatformWorkerOptions> workerOptions,
+                CancellationToken ct) =>
                 Results.Ok(
                     await h
-                        // UserId defaults to 1 (single-user system for now).
-                        .HandleAsync(new ListNewsFeedQuery(UserId: 1), ct)
+                        .HandleAsync(new ListNewsFeedQuery(UserId: workerOptions.Value.PrimaryUserId), ct)
                         .ConfigureAwait(false)));
 
         v1.MapPost(

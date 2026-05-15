@@ -46,7 +46,7 @@ public interface IProceduralRuleService : IProceduralRuleReadRepository
         int userId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Applies a review-approved NewProceduralRule payload (same DbContext as the enclosing transaction).</summary>
+    /// <summary>Applies a review-approved NewProceduralRule payload within the same unit of work as the enclosing review operation.</summary>
     Task<long> ApplyApprovedNewProceduralProposalAsync(
         int userId,
         NewProceduralRuleMemoryProposalV1 payload,

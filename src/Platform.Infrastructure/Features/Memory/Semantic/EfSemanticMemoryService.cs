@@ -3,6 +3,7 @@ using Npgsql;
 using Platform.Application.Abstractions.Memory.Confidence;
 using Platform.Application.Abstractions.Memory.Contradictions;
 using Platform.Application.Abstractions.Memory.Semantic;
+using Platform.Application.Features.Memory.Exceptions;
 using Platform.Domain.Features.Memory;
 using Platform.Domain.Features.Memory.Entities;
 using Platform.Domain.Features.Memory.ValueObjects;
@@ -128,7 +129,7 @@ public sealed class EfSemanticMemoryService(
             .ConfigureAwait(false);
         if (existing is not null)
         {
-            throw new MemoryConflictException(
+            throw new MemoryApplicationException(
                 "A semantic memory with this key and domain already exists (active or pending review).");
         }
 
@@ -155,7 +156,7 @@ public sealed class EfSemanticMemoryService(
             }
             catch (DbUpdateException ex) when (IsUniqueViolation(ex))
             {
-                throw new MemoryConflictException(
+                throw new MemoryApplicationException(
                     "A semantic memory with this key and domain already exists (active or pending review).");
             }
 
@@ -179,7 +180,7 @@ public sealed class EfSemanticMemoryService(
             }
             catch (DbUpdateException ex) when (IsUniqueViolation(ex))
             {
-                throw new MemoryConflictException(
+                throw new MemoryApplicationException(
                     "Could not create evidence: duplicate or conflicting row.");
             }
             catch (DbUpdateException)

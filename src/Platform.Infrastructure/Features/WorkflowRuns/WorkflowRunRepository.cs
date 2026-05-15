@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.Application.Abstractions.WorkflowRuns;
+using Platform.Application.Features.WorkflowRuns.Shared;
 using Platform.Contracts.V1;
 using Platform.Domain.Features.WorkflowRuns;
 using Platform.Infrastructure.Persistence;
@@ -16,7 +17,7 @@ public sealed class WorkflowRunRepository(PlatformDbContext db) : IWorkflowRunRe
             .Select(x => new WorkflowRunSummaryDto(
                 x.Id,
                 x.Name,
-                WorkflowRunStatusMapper.ToApiString(x.Status),
+                WorkflowRunStatusFormatter.ToApiString(x.Status),
                 x.UpdatedAt.ToString("O")))
             .ToListAsync(cancellationToken);
     }

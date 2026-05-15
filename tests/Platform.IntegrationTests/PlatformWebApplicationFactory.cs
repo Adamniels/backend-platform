@@ -4,7 +4,7 @@ using Platform.IntegrationTests.Infrastructure;
 
 namespace Platform.IntegrationTests;
 
-public sealed class PlatformWebApplicationFactory : WebApplicationFactory<Program>
+public class PlatformWebApplicationFactory : WebApplicationFactory<Program>
 {
     private const string LocalComposeConnection =
         "Host=localhost;Port=5432;Database=platform;Username=platform;Password=platform";

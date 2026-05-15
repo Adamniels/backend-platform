@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using FluentValidation;
@@ -17,6 +18,12 @@ public sealed class IngestNewsItemCommandHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
 
+        // PublishedAt is guaranteed valid by the validator above.
+        var publishedAt = DateTimeOffset.Parse(
+            command.PublishedAt,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind);
+
         var normalizedUrl = command.Url.Trim();
         var urlHash = ComputeUrlHash(normalizedUrl);
 
@@ -30,7 +37,7 @@ public sealed class IngestNewsItemCommandHandler(
             Source = command.Source.Trim(),
             Body = command.Body,
             Author = string.IsNullOrWhiteSpace(command.Author) ? null : command.Author.Trim(),
-            PublishedAt = command.PublishedAt,
+            PublishedAt = publishedAt,
             SourceFeedUrl = string.IsNullOrWhiteSpace(command.SourceFeedUrl)
                 ? null
                 : command.SourceFeedUrl.Trim(),

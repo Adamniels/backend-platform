@@ -1,22 +1,19 @@
 using System.Text.Json;
+using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Platform.Domain.Features.Memory;
 using Platform.Api.Access;
 using Platform.Application.Configuration;
+using Platform.Application.Abstractions;
 using Platform.Api.Features;
 using Platform.Api.Features.Access;
-using Platform.Api.Features.Memory.Internal;
-using Platform.Api.Features.News.Internal;
-using Platform.Api.Features.SideLearning.Internal;
 using Platform.Api.Middleware;
 using Platform.Application;
+using Platform.Application.Features.Memory.Exceptions;
 using Platform.Infrastructure;
-using Platform.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 LoadDevelopmentEnvFile(builder);
@@ -81,10 +78,12 @@ builder.Services.AddPlatformInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// Auto-migrate only in Development and Testing — production migrations are run explicitly.
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
-    await db.Database.MigrateAsync().ConfigureAwait(false);
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>();
+    await db.MigrateAsync().ConfigureAwait(false);
 }
 
 app.UseExceptionHandler(errorApp =>
@@ -93,11 +92,28 @@ app.UseExceptionHandler(errorApp =>
     {
         var feature = context.Features.Get<IExceptionHandlerFeature>();
         var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Platform.Errors");
-        if (feature?.Error is MemoryConflictException cex)
+
+        // B1: FluentValidation → 400 ProblemDetails
+        if (feature?.Error is ValidationException vex)
+        {
+            var errors = vex.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            await Results.ValidationProblem(errors)
+                .ExecuteAsync(context)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        // C4: MemoryApplicationException → 409 Conflict.
+        if (feature?.Error is MemoryApplicationException mex)
         {
             await Results.Problem(
                     title: "Conflict",
-                    detail: cex.Message,
+                    detail: mex.Message,
                     statusCode: StatusCodes.Status409Conflict)
                 .ExecuteAsync(context)
                 .ConfigureAwait(false);
@@ -150,19 +166,18 @@ app.UseMiddleware<RequirePlatformAccessMiddleware>();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
+// C3: /ready uses IDatabaseHealthCheck — no direct EF reference in the Api host.
 app.MapGet(
     "/ready",
-    async (PlatformDbContext db, CancellationToken ct) =>
+    async (IDatabaseHealthCheck health, CancellationToken ct) =>
     {
-        var canConnect = await db.Database.CanConnectAsync(ct).ConfigureAwait(false);
+        var canConnect = await health.CanConnectAsync(ct).ConfigureAwait(false);
         return canConnect ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503);
     });
 
 app.MapAdminEndpoints();
 app.MapV1Endpoints();
-InternalMemoryV1Routes.Map(app);
-InternalNewsV1Routes.Map(app);
-InternalSideLearningV1Routes.Map(app);
+app.MapInternalEndpoints();
 
 app.Run();
 

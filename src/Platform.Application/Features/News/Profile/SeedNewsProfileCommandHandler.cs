@@ -1,3 +1,4 @@
+using FluentValidation;
 using Pgvector;
 using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Abstractions.News;
@@ -6,6 +7,7 @@ using Platform.Domain.Features.News;
 namespace Platform.Application.Features.News.Profile;
 
 public sealed class SeedNewsProfileCommandHandler(
+    IValidator<SeedNewsProfileCommand> validator,
     IUserInterestProvider interestProvider,
     INewsProfileRepository profileRepo,
     IMemoryEmbeddingGenerator embeddingGenerator)
@@ -14,6 +16,7 @@ public sealed class SeedNewsProfileCommandHandler(
         SeedNewsProfileCommand command,
         CancellationToken cancellationToken = default)
     {
+        await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
         // Idempotent — if the profile already exists, skip.
         if (await profileRepo.ExistsAsync(command.UserId, cancellationToken).ConfigureAwait(false))
             return SeedNewsProfileResult.Exists;

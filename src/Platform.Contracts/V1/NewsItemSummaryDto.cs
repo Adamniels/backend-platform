@@ -5,6 +5,6 @@ public sealed record NewsItemSummaryDto(
     string Title,
     string Source,
     string PublishedAt,
-    string? Url = null,
-    string? Body = null,
-    double? RelevanceScore = null);
+    string? Url,
+    string? Body,
+    double? RelevanceScore);

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Pgvector;
 using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Abstractions.News;
@@ -6,6 +7,7 @@ using Platform.Domain.Features.News;
 namespace Platform.Application.Features.News.Embed;
 
 public sealed class EmbedNewsItemCommandHandler(
+    IValidator<EmbedNewsItemCommand> validator,
     INewsReadRepository newsRead,
     INewsEmbeddingRepository embedRepo,
     IMemoryEmbeddingGenerator embeddingGenerator)
@@ -18,6 +20,7 @@ public sealed class EmbedNewsItemCommandHandler(
         EmbedNewsItemCommand command,
         CancellationToken cancellationToken = default)
     {
+        await validator.ValidateAndThrowAsync(command, cancellationToken).ConfigureAwait(false);
         // Skip if already embedded for this model.
         if (await embedRepo
                 .ExistsAsync(command.NewsItemId, embeddingGenerator.ModelKey, cancellationToken)

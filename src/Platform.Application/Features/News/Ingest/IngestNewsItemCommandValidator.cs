@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentValidation;
 
 namespace Platform.Application.Features.News.Ingest;
@@ -12,5 +13,13 @@ public sealed class IngestNewsItemCommandValidator : AbstractValidator<IngestNew
         RuleFor(x => x.Body).NotNull().MaximumLength(1_000_000);
         RuleFor(x => x.Author).MaximumLength(512).When(x => x.Author is not null);
         RuleFor(x => x.SourceFeedUrl).MaximumLength(2048).When(x => x.SourceFeedUrl is not null);
+        RuleFor(x => x.PublishedAt)
+            .NotEmpty()
+            .Must(s => DateTimeOffset.TryParse(
+                s,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out _))
+            .WithMessage("Expected an ISO-8601 date/time string.");
     }
 }

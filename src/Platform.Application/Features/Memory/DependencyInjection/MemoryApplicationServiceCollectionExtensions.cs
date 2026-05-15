@@ -5,7 +5,6 @@ using Platform.Application.Features.Memory.Events.ListMemoryEvents;
 using Platform.Application.Features.Memory.Documents.IngestDocumentMemory;
 using Platform.Application.Features.Memory.Events.IngestEvent;
 using Platform.Application.Features.Memory.Items.ListItems;
-using Platform.Application.Features.Memory.Legacy.Insights;
 using Platform.Application.Features.Memory.Profile.GetProfileMemory;
 using Platform.Application.Features.Memory.Procedural.ActivateProceduralRule;
 using Platform.Application.Features.Memory.Procedural.CreateProceduralRule;
@@ -37,7 +36,6 @@ public static class MemoryApplicationServiceCollectionExtensions
 {
     public static IServiceCollection AddMemoryApplication(this IServiceCollection services) =>
         services
-            .AddScoped<ListMemoryInsightsQueryHandler>()
             .AddScoped<IngestMemoryEventCommandHandler>()
             .AddScoped<ListMemoryEventsQueryHandler>()
             .AddScoped<ListSemanticMemoryEvidenceQueryHandler>()

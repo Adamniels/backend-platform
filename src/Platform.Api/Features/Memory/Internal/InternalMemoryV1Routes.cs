@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Platform.Application.Configuration;
 using Platform.Application.Features.Memory.Consolidation.Nightly;
 using Platform.Application.Features.Memory.Context.GetMemoryContextV1;
 using Platform.Contracts.V1.Memory;
-using Platform.Domain.Features.Memory;
 
 namespace Platform.Api.Features.Memory.Internal;
 
@@ -55,24 +53,14 @@ public static class InternalMemoryV1Routes
                     var idempotencyKey = string.IsNullOrWhiteSpace(w.IdempotencyKey)
                         ? $"nightly-{userId}-{windowEnd:yyyy-MM-dd}"
                         : w.IdempotencyKey.Trim();
-                    try
-                    {
-                        var cmd = new ExecuteNightlyMemoryConsolidationCommand(
-                            userId,
-                            windowEnd,
-                            idempotencyKey);
-                        var res = await handler
-                            .HandleAsync(cmd, ct)
-                            .ConfigureAwait(false);
-                        return Results.Ok(res);
-                    }
-                    catch (MemoryConflictException ex)
-                    {
-                        return Results.Problem(
-                            title: "Conflict",
-                            detail: ex.Message,
-                            statusCode: StatusCodes.Status409Conflict);
-                    }
+                    var cmd = new ExecuteNightlyMemoryConsolidationCommand(
+                        userId,
+                        windowEnd,
+                        idempotencyKey);
+                    var res = await handler
+                        .HandleAsync(cmd, ct)
+                        .ConfigureAwait(false);
+                    return Results.Ok(res);
                 })
             .DisableAntiforgery();
     }

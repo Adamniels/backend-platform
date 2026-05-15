@@ -1,8 +1,1 @@
-using Platform.Contracts.V1;
-
-namespace Platform.Application.Abstractions.Memory.Legacy;
-
-public interface ILegacyMemoryInsightsReadRepository
-{
-    Task<IReadOnlyList<MemoryInsightDto>> ListInsightsAsync(CancellationToken cancellationToken = default);
-}
+// Removed: legacy memory insights abstraction (A6 — see LEGACY_MEMORY_REMOVAL.md).

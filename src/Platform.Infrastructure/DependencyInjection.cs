@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Pgvector.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Platform.Application.Abstractions;
 using Platform.Application.Abstractions.Access;
 using Platform.Application.Abstractions.Dashboard;
 using Platform.Application.Abstractions.HumanInput;
@@ -24,6 +25,7 @@ using Platform.Infrastructure.Features.Profile;
 using Platform.Infrastructure.Features.SavedItems;
 using Platform.Infrastructure.Features.SideLearning;
 using Platform.Infrastructure.Features.WorkflowRuns;
+using Platform.Infrastructure.Health;
 using Platform.Infrastructure.Persistence;
 using Platform.Infrastructure.Temporal;
 
@@ -35,18 +37,35 @@ public static class DependencyInjection
     {
         services.AddPlatformMemoryInfrastructure(configuration);
 
-        var connectionString = configuration.GetConnectionString("Default")
-                               ?? "Host=localhost;Port=5432;Database=platform;Username=platform;Password=platform";
+        // C6: Fail fast on missing connection string outside Development / Testing.
+        var connectionString = configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var env = configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+            var isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(env, "Testing", StringComparison.OrdinalIgnoreCase);
+
+            if (!isDev)
+                throw new InvalidOperationException(
+                    "ConnectionStrings:Default is required in non-Development environments.");
+
+            connectionString = "Host=localhost;Port=5432;Database=platform;Username=platform;Password=platform";
+        }
 
         services.AddDbContext<PlatformDbContext>(
             options => options.UseNpgsql(connectionString, o => o.UseVector()));
 
+        // C3: Health and migration ports — Api host uses these instead of PlatformDbContext directly.
+        services.AddScoped<IDatabaseHealthCheck, EfDatabaseHealthCheck>();
+        services.AddScoped<IDatabaseMigrator, EfDatabaseMigrator>();
+
         services.AddHttpClient();
 
-        // OpenAI embedding provider — replaces the dev stub registered by memory infrastructure.
-        // IMemoryEmbeddingGenerator is shared across news and memory pipelines.
+        // C1: Singleton — OpenAiEmbeddingGenerator holds no request-scoped state; IHttpClientFactory
+        // is Singleton-safe. This is the single registration for IMemoryEmbeddingGenerator; the
+        // memory infrastructure extension no longer registers it.
         services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionKey));
-        services.AddScoped<IMemoryEmbeddingGenerator, OpenAiEmbeddingGenerator>();
+        services.AddSingleton<IMemoryEmbeddingGenerator, OpenAiEmbeddingGenerator>();
 
         services.AddSingleton<IWorkflowStartOptions, WorkflowStartOptions>();
         services.AddScoped<IAccessKeyValidationService, AccessKeyValidationService>();

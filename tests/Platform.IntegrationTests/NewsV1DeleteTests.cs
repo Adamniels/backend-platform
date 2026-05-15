@@ -6,11 +6,18 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Platform.Contracts.Admin;
 using Platform.Contracts.V1;
 using Platform.Contracts.V1.News;
+using Platform.IntegrationTests.Infrastructure;
 using Xunit;
 
 namespace Platform.IntegrationTests;
 
-public sealed class NewsV1DeleteTests(PlatformWebApplicationFactory factory) : IClassFixture<PlatformWebApplicationFactory>
+/// <summary>
+/// Uses <see cref="DeterministicEmbeddingWebApplicationFactory"/> so items can be embedded
+/// before the feed is checked. This ensures the feed assertion is robust whether or not
+/// user 1 has a news profile and vector search is active.
+/// </summary>
+public sealed class NewsV1DeleteTests(DeterministicEmbeddingWebApplicationFactory factory)
+    : IClassFixture<DeterministicEmbeddingWebApplicationFactory>
 {
     private const string ServiceToken = "integration-memory-worker-token";
     private static readonly JsonSerializerOptions JsonReadOptions = new() { PropertyNameCaseInsensitive = true };
@@ -40,7 +47,7 @@ public sealed class NewsV1DeleteTests(PlatformWebApplicationFactory factory) : I
                 title,
                 url,
                 "IntegrationDelete",
-                "Body",
+                "Body text for embedding",
                 null,
                 DateTimeOffset.UtcNow.ToString("O"),
                 null);
@@ -55,8 +62,21 @@ public sealed class NewsV1DeleteTests(PlatformWebApplicationFactory factory) : I
             return json.Id!;
         }
 
+        async Task Embed(string id)
+        {
+            var r = await internalClient.PostAsync(
+                new Uri($"/api/internal/v1/news/items/{id}/embed", UriKind.Relative),
+                null);
+            r.EnsureSuccessStatusCode();
+        }
+
         var id1 = await Ingest(url1, "Delete test A");
         var id2 = await Ingest(url2, "Delete test B");
+
+        // Embed both items so they appear in the feed regardless of whether vector
+        // search is active for user 1 (robust against stale profile data in the DB).
+        await Embed(id1);
+        await Embed(id2);
 
         using var userClient = factory.CreateClient(
             new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Platform.Application.Features.News;
 using Platform.Application.Features.News.Embed;
 using Platform.Application.Features.News.Ingest;
@@ -22,25 +21,13 @@ public static class InternalNewsV1Routes
                     IngestNewsItemCommandHandler handler,
                     CancellationToken ct) =>
                 {
-                    if (!DateTimeOffset.TryParse(
-                            body.PublishedAt,
-                            CultureInfo.InvariantCulture,
-                            DateTimeStyles.RoundtripKind,
-                            out var publishedAt))
-                    {
-                        return Results.Problem(
-                            title: "Invalid publishedAt",
-                            detail: "Expected an ISO-8601 date/time string.",
-                            statusCode: StatusCodes.Status400BadRequest);
-                    }
-
                     var cmd = new IngestNewsItemCommand(
                         body.Title,
                         body.Url,
                         body.Source,
                         body.Body,
                         body.Author,
-                        publishedAt,
+                        body.PublishedAt,
                         body.SourceFeedUrl);
                     var res = await handler.HandleAsync(cmd, ct).ConfigureAwait(false);
                     return Results.Ok(res);
