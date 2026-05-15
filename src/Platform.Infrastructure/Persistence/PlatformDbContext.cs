@@ -17,6 +17,8 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<PlatformUserSettings> UserSettings => Set<PlatformUserSettings>();
     public DbSet<WorkflowRun> WorkflowRuns => Set<WorkflowRun>();
     public DbSet<NewsItem> NewsItems => Set<NewsItem>();
+    public DbSet<NewsItemEmbedding> NewsItemEmbeddings => Set<NewsItemEmbedding>();
+    public DbSet<NewsUserProfile> NewsUserProfiles => Set<NewsUserProfile>();
     public DbSet<SideLearningSession> SideLearningSessions => Set<SideLearningSession>();
     public DbSet<SavedItem> SavedItems => Set<SavedItem>();
     public DbSet<MemoryInsight> MemoryInsights => Set<MemoryInsight>();
@@ -135,6 +137,32 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
                 Id = StatsSnapshot.SingletonKey,
                 Json = """{"tiles":[],"progress":[],"activity":[]}""",
             });
+        });
+
+        modelBuilder.Entity<NewsItemEmbedding>(e =>
+        {
+            e.ToTable("news_item_embeddings");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.NewsItemId).HasMaxLength(64);
+            e.Property(x => x.EmbeddingModelKey).HasMaxLength(256);
+            e.Property(x => x.Embedding)
+                .HasColumnType("vector(1536)");
+            e.HasIndex(x => new { x.NewsItemId, x.EmbeddingModelKey })
+                .IsUnique()
+                .HasDatabaseName("ix_news_item_embeddings_item_model");
+            e.HasOne(x => x.NewsItem)
+                .WithMany()
+                .HasForeignKey(x => x.NewsItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NewsUserProfile>(e =>
+        {
+            e.ToTable("news_user_profiles");
+            e.HasKey(x => x.UserId);
+            e.Property(x => x.SeedText).HasColumnType("text");
+            e.Property(x => x.LongTermEmbedding)
+                .HasColumnType("vector(1536)");
         });
 
         modelBuilder.ConfigureMemoryV1();

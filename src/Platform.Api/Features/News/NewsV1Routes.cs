@@ -13,7 +13,8 @@ public static class NewsV1Routes
             async (ListNewsFeedQueryHandler h, CancellationToken ct) =>
                 Results.Ok(
                     await h
-                        .HandleAsync(new ListNewsFeedQuery(), ct)
+                        // UserId defaults to 1 (single-user system for now).
+                        .HandleAsync(new ListNewsFeedQuery(UserId: 1), ct)
                         .ConfigureAwait(false)));
 
         v1.MapPost(

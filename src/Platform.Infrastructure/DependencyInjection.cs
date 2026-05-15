@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Platform.Application.Abstractions.Access;
 using Platform.Application.Abstractions.Dashboard;
 using Platform.Application.Abstractions.HumanInput;
+using Platform.Application.Abstractions.Memory.Embeddings;
 using Platform.Application.Abstractions.News;
 using Platform.Application.Abstractions.Profile;
 using Platform.Application.Abstractions.SavedItems;
@@ -12,6 +13,7 @@ using Platform.Application.Abstractions.SideLearning;
 using Platform.Application.Abstractions.Stats;
 using Platform.Application.Abstractions.Workflows;
 using Platform.Application.Abstractions.WorkflowRuns;
+using Platform.Infrastructure.AI;
 using Platform.Infrastructure.Access;
 using Platform.Infrastructure.Configuration;
 using Platform.Infrastructure.Features.Dashboard;
@@ -39,6 +41,13 @@ public static class DependencyInjection
         services.AddDbContext<PlatformDbContext>(
             options => options.UseNpgsql(connectionString, o => o.UseVector()));
 
+        services.AddHttpClient();
+
+        // OpenAI embedding provider — replaces the dev stub registered by memory infrastructure.
+        // IMemoryEmbeddingGenerator is shared across news and memory pipelines.
+        services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionKey));
+        services.AddScoped<IMemoryEmbeddingGenerator, OpenAiEmbeddingGenerator>();
+
         services.AddSingleton<IWorkflowStartOptions, WorkflowStartOptions>();
         services.AddScoped<IAccessKeyValidationService, AccessKeyValidationService>();
         services.AddScoped<IDashboardReadModelSource, DashboardReadModelSource>();
@@ -48,6 +57,9 @@ public static class DependencyInjection
         services.AddScoped<INewsReadRepository, NewsReadRepository>();
         services.AddScoped<INewsIngestRepository, EfNewsIngestRepository>();
         services.AddScoped<INewsDeleteRepository, EfNewsDeleteRepository>();
+        services.AddScoped<INewsEmbeddingRepository, EfNewsEmbeddingRepository>();
+        services.AddScoped<INewsProfileRepository, EfNewsProfileRepository>();
+        services.AddScoped<INewsVectorSearch, NewsVectorSearch>();
         services.AddScoped<IUserInterestProvider, ExplicitProfileUserInterestProvider>();
         services.AddScoped<ISideLearningSessionRepository, SideLearningSessionRepository>();
         services.AddScoped<ISavedItemsReadRepository, SavedItemsReadRepository>();

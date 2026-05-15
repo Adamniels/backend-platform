@@ -10,6 +10,7 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
     public async Task<IReadOnlyList<NewsItemSummaryDto>> ListFeedAsync(CancellationToken cancellationToken = default) =>
         await db.NewsItems.AsNoTracking()
             .OrderByDescending(x => x.PublishedAt)
+            .Take(30)
             .Select(x => new NewsItemSummaryDto(
                 x.Id,
                 x.Title,
@@ -18,4 +19,29 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
                 string.IsNullOrEmpty(x.Url) ? null : x.Url,
                 string.IsNullOrEmpty(x.Body) ? null : x.Body))
             .ToListAsync(cancellationToken);
+
+    public async Task<string?> GetBodyByIdAsync(string id, CancellationToken cancellationToken = default) =>
+        await db.NewsItems.AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => x.Body)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<NewsItemSummaryDto>> GetByIdsAsync(
+        IEnumerable<string> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await db.NewsItems.AsNoTracking()
+            .Where(x => idList.Contains(x.Id))
+            .Select(x => new NewsItemSummaryDto(
+                x.Id,
+                x.Title,
+                x.Source,
+                x.PublishedAt.ToString("O"),
+                string.IsNullOrEmpty(x.Url) ? null : x.Url,
+                string.IsNullOrEmpty(x.Body) ? null : x.Body))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
 }
