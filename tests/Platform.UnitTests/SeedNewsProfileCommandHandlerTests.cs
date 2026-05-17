@@ -19,6 +19,9 @@ public sealed class SeedNewsProfileCommandHandlerTests
         public Task<bool> ExistsAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult(exists);
 
+        public Task<NewsUserProfile?> GetAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<NewsUserProfile?>(null);
+
         public Task UpsertAsync(NewsUserProfile profile, CancellationToken cancellationToken = default)
         {
             Upserted = profile;

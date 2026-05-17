@@ -20,6 +20,7 @@ public static class V1ApiRegistration
         WorkflowRunsV1Routes.Map(v1);
         ProfileV1Routes.Map(v1);
         NewsV1Routes.Map(v1);
+        NewsInteractionV1Routes.Map(v1);
         SideLearningV1Routes.Map(v1);
         SavedItemsV1Routes.Map(v1);
         MemoryV1Routes.Map(v1);

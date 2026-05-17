@@ -13,6 +13,11 @@ public sealed class EfNewsProfileRepository(PlatformDbContext db) : INewsProfile
             .AnyAsync(p => p.UserId == userId, cancellationToken)
             .ConfigureAwait(false);
 
+    public async Task<NewsUserProfile?> GetAsync(int userId, CancellationToken cancellationToken = default) =>
+        await db.NewsUserProfiles
+            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken)
+            .ConfigureAwait(false);
+
     public async Task UpsertAsync(NewsUserProfile profile, CancellationToken cancellationToken = default)
     {
         var existing = await db.NewsUserProfiles

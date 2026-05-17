@@ -10,6 +10,7 @@ using Platform.Application.Features.News.Embed;
 using Platform.Application.Features.News.Ingest;
 using Platform.Application.Features.News.ListFeed;
 using Platform.Application.Features.News.Profile;
+using Platform.Application.Features.News.RecordInteraction;
 using Platform.Application.Features.Profile.GetProfile;
 using Platform.Application.Features.Profile.GetSettings;
 using Platform.Application.Features.SavedItems.ListSavedItems;
@@ -48,6 +49,8 @@ public static class DependencyInjection
             .AddScoped<IngestNewsItemCommandHandler>()
             .AddScoped<EmbedNewsItemCommandHandler>()
             .AddScoped<SeedNewsProfileCommandHandler>()
+            .AddScoped<UpdateNewsProfileCommandHandler>()
+            .AddScoped<RecordNewsInteractionCommandHandler>()
             .AddScoped<DeleteNewsItemsCommandHandler>()
             .AddScoped<CreateSideLearningSessionCommandHandler>()
             .AddScoped<GetSideLearningSessionQueryHandler>()

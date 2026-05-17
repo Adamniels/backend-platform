@@ -24,6 +24,12 @@ public sealed class EmbedNewsItemCommandHandlerTests
             Upserted = embedding;
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<NewsItemEmbedding>> GetByNewsItemIdsAsync(
+            IEnumerable<string> newsItemIds,
+            string modelKey,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<NewsItemEmbedding>>([]);
     }
 
     private sealed class StubNewsReadRepository(string? body) : INewsReadRepository

@@ -19,6 +19,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<NewsItem> NewsItems => Set<NewsItem>();
     public DbSet<NewsItemEmbedding> NewsItemEmbeddings => Set<NewsItemEmbedding>();
     public DbSet<NewsUserProfile> NewsUserProfiles => Set<NewsUserProfile>();
+    public DbSet<NewsInteraction> NewsInteractions => Set<NewsInteraction>();
     public DbSet<SideLearningSession> SideLearningSessions => Set<SideLearningSession>();
     public DbSet<SavedItem> SavedItems => Set<SavedItem>();
     public DbSet<MemoryInsight> MemoryInsights => Set<MemoryInsight>();
@@ -163,6 +164,22 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.SeedText).HasColumnType("text");
             e.Property(x => x.LongTermEmbedding)
                 .HasColumnType("vector(1536)");
+        });
+
+        modelBuilder.Entity<NewsInteraction>(e =>
+        {
+            e.ToTable("news_interactions");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.NewsItemId).HasMaxLength(64);
+            // Restrict delete — keep interaction history even when the article is removed.
+            e.HasOne<NewsItem>()
+                .WithMany()
+                .HasForeignKey(x => x.NewsItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UserId, x.RecordedAt })
+                .HasDatabaseName("ix_news_interactions_user_recorded");
+            e.HasIndex(x => x.NewsItemId)
+                .HasDatabaseName("ix_news_interactions_item");
         });
 
         modelBuilder.ConfigureMemoryV1();

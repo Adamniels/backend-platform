@@ -817,6 +817,42 @@ namespace Platform.Infrastructure.Persistence.Migrations
                     b.ToTable("NewsItems");
                 });
 
+            modelBuilder.Entity("Platform.Domain.Features.News.NewsInteraction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("DwellSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NewsItemId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NewsItemId")
+                        .HasDatabaseName("ix_news_interactions_item");
+
+                    b.HasIndex("UserId", "RecordedAt")
+                        .HasDatabaseName("ix_news_interactions_user_recorded");
+
+                    b.ToTable("news_interactions", (string)null);
+                });
+
             modelBuilder.Entity("Platform.Domain.Features.News.NewsItemEmbedding", b =>
                 {
                     b.Property<long>("Id")
@@ -1194,6 +1230,15 @@ namespace Platform.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Platform.Domain.Features.News.NewsInteraction", b =>
+                {
+                    b.HasOne("Platform.Domain.Features.News.NewsItem", null)
+                        .WithMany()
+                        .HasForeignKey("NewsItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Platform.Domain.Features.News.NewsItemEmbedding", b =>

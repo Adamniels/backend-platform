@@ -94,5 +94,27 @@ public static class InternalNewsV1Routes
                     return Results.Ok(new SeedNewsProfileV1Response(status));
                 })
             .DisableAntiforgery();
+
+        group.MapPost(
+                "profile/update-from-interactions",
+                async (
+                    UpdateNewsProfileV1Request body,
+                    UpdateNewsProfileCommandHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var result = await handler
+                        .HandleAsync(new UpdateNewsProfileCommand(body.UserId, body.WindowDays ?? 7), ct)
+                        .ConfigureAwait(false);
+
+                    var status = result switch
+                    {
+                        UpdateNewsProfileResult.Updated   => "updated",
+                        UpdateNewsProfileResult.NoData    => "no-data",
+                        UpdateNewsProfileResult.NoProfile => "no-profile",
+                        _                                 => "error",
+                    };
+                    return Results.Ok(new UpdateNewsProfileV1Response(status));
+                })
+            .DisableAntiforgery();
     }
 }

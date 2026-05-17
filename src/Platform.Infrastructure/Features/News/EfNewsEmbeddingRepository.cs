@@ -39,4 +39,20 @@ public sealed class EfNewsEmbeddingRepository(PlatformDbContext db) : INewsEmbed
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task<IReadOnlyList<NewsItemEmbedding>> GetByNewsItemIdsAsync(
+        IEnumerable<string> newsItemIds,
+        string modelKey,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = newsItemIds.ToArray();
+        if (ids.Length == 0)
+            return [];
+
+        return await db.NewsItemEmbeddings
+            .AsNoTracking()
+            .Where(e => ids.Contains(e.NewsItemId) && e.EmbeddingModelKey == modelKey)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

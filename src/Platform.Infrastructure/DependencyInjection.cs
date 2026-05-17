@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<INewsDeleteRepository, EfNewsDeleteRepository>();
         services.AddScoped<INewsEmbeddingRepository, EfNewsEmbeddingRepository>();
         services.AddScoped<INewsProfileRepository, EfNewsProfileRepository>();
+        services.AddScoped<INewsInteractionRepository, EfNewsInteractionRepository>();
         services.AddScoped<INewsVectorSearch, NewsVectorSearch>();
         services.AddScoped<IUserInterestProvider, ExplicitProfileUserInterestProvider>();
         services.AddScoped<ISideLearningSessionRepository, SideLearningSessionRepository>();
