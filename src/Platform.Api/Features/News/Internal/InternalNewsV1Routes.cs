@@ -116,5 +116,26 @@ public static class InternalNewsV1Routes
                     return Results.Ok(new UpdateNewsProfileV1Response(status));
                 })
             .DisableAntiforgery();
+
+        group.MapPost(
+                "profile/update-active-context",
+                async (
+                    UpdateNewsActiveContextV1Request body,
+                    UpdateNewsActiveContextCommandHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var result = await handler
+                        .HandleAsync(new UpdateNewsActiveContextCommand(body.UserId), ct)
+                        .ConfigureAwait(false);
+
+                    var status = result switch
+                    {
+                        UpdateNewsActiveContextResult.Updated   => "updated",
+                        UpdateNewsActiveContextResult.NoProfile => "no-profile",
+                        _                                       => "error",
+                    };
+                    return Results.Ok(new UpdateNewsActiveContextV1Response(status));
+                })
+            .DisableAntiforgery();
     }
 }

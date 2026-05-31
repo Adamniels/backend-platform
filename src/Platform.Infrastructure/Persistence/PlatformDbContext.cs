@@ -164,6 +164,12 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.SeedText).HasColumnType("text");
             e.Property(x => x.LongTermEmbedding)
                 .HasColumnType("vector(1536)");
+            e.Property(x => x.ShortTermEmbedding)
+                .HasColumnType("vector(1536)")
+                .IsRequired(false);
+            e.Property(x => x.ActiveContextEmbedding)
+                .HasColumnType("vector(1536)")
+                .IsRequired(false);
         });
 
         modelBuilder.Entity<NewsInteraction>(e =>

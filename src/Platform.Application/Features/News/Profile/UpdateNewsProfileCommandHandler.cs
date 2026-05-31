@@ -13,9 +13,15 @@ public sealed class UpdateNewsProfileCommandHandler(
     INewsProfileRepository profiles,
     IMemoryEmbeddingGenerator embeddingGenerator)
 {
-    // Momentum factor — how much of the existing profile is preserved each update.
+    // Momentum factor for long-term — how much of the existing profile is preserved each update.
     // At 0.85 the profile requires ~13 runs to shift significantly (half-life ~6 runs).
     private const double Alpha = 0.85;
+
+    // Long-term interaction window in days.
+    private const int LongTermWindowDays = 7;
+
+    // Short-term interaction window in days — raw snapshot, no momentum.
+    private const int ShortTermWindowDays = 14;
 
     // Minimum weight for any read interaction regardless of dwell time.
     private const double ReadWeightMin = 0.2;
@@ -46,16 +52,18 @@ public sealed class UpdateNewsProfileCommandHandler(
         if (profile is null)
             return UpdateNewsProfileResult.NoProfile;
 
-        var since = DateTimeOffset.UtcNow.AddDays(-command.WindowDays);
-        var recent = await interactions
-            .GetRecentAsync(command.UserId, since, cancellationToken)
+        // Fetch the wider 14-day window in one query — it is a superset of the 7-day window,
+        // so both long-term and short-term can be computed from a single DB round-trip.
+        var since14 = DateTimeOffset.UtcNow.AddDays(-ShortTermWindowDays);
+        var all14 = await interactions
+            .GetRecentAsync(command.UserId, since14, cancellationToken)
             .ConfigureAwait(false);
 
-        if (recent.Count == 0)
+        if (all14.Count == 0)
             return UpdateNewsProfileResult.NoData;
 
         // Load embeddings for all interacted articles in one query.
-        var interactedIds = recent.Select(i => i.NewsItemId).Distinct().ToArray();
+        var interactedIds = all14.Select(i => i.NewsItemId).Distinct().ToArray();
         var stored = await embeddings
             .GetByNewsItemIdsAsync(interactedIds, embeddingGenerator.ModelKey, cancellationToken)
             .ConfigureAwait(false);
@@ -65,51 +73,75 @@ public sealed class UpdateNewsProfileCommandHandler(
 
         var embeddingMap = stored.ToDictionary(e => e.NewsItemId, e => e.Embedding.ToArray());
 
-        // Compute dwell baseline for normalization.
+        // Compute dwell baseline for normalization across both windows.
         var avgDwell = await interactions
             .GetAverageDwellSecondsAsync(command.UserId, cancellationToken)
             .ConfigureAwait(false) ?? DefaultAverageDwellSeconds;
 
-        // Accumulate the weighted sum across all interactions that have embeddings.
         var dimensions = embeddingGenerator.Dimensions;
+        var now = DateTimeOffset.UtcNow;
+
+        // ── Long-term: 7-day subset, blended with momentum ───────────────────────
+        var cutoff7 = now.AddDays(-LongTermWindowDays);
+        var recent7 = all14.Where(i => i.RecordedAt >= cutoff7).ToList();
+        var longSignal = ComputeWeightedSum(recent7, embeddingMap, avgDwell, dimensions);
+        if (longSignal is not null)
+        {
+            var currentVec = profile.LongTermEmbedding.ToArray();
+            var blended = new double[dimensions];
+            for (var i = 0; i < dimensions; i++)
+                blended[i] = Alpha * currentVec[i] + (1.0 - Alpha) * longSignal[i];
+
+            var longResult = Normalize(blended);
+            if (longResult is not null)
+            {
+                profile.LongTermEmbedding = new Vector(longResult.Select(d => (float)d).ToArray());
+                profile.UpdatedAt = now;
+            }
+        }
+
+        // ── Short-term: full 14-day window, raw weighted average, no momentum ────
+        var shortSignal = ComputeWeightedSum(all14, embeddingMap, avgDwell, dimensions);
+        if (shortSignal is not null)
+        {
+            profile.ShortTermEmbedding = new Vector(shortSignal.Select(d => (float)d).ToArray());
+            profile.ShortTermUpdatedAt = now;
+        }
+
+        var anyUpdate = longSignal is not null || shortSignal is not null;
+        if (!anyUpdate)
+            return UpdateNewsProfileResult.NoData;
+
+        await profiles.UpsertAsync(profile, cancellationToken).ConfigureAwait(false);
+        return UpdateNewsProfileResult.Updated;
+    }
+
+    /// <summary>
+    /// Computes the normalized weighted sum of article embeddings for the given interactions.
+    /// Returns null when there is no signal (no matched embeddings, or all weights cancel to zero).
+    /// </summary>
+    private static double[]? ComputeWeightedSum(
+        IEnumerable<NewsInteraction> source,
+        Dictionary<string, float[]> embeddingMap,
+        double avgDwell,
+        int dimensions)
+    {
         var weightedSum = new double[dimensions];
         var hasSignal = false;
 
-        foreach (var interaction in recent)
+        foreach (var interaction in source)
         {
             if (!embeddingMap.TryGetValue(interaction.NewsItemId, out var vec))
-                continue;  // article was ingested before Phase 2 — skip gracefully
+                continue;  // article ingested before Phase 2 — no embedding, skip gracefully
 
             var weight = ComputeWeight(interaction, avgDwell);
-
             for (var i = 0; i < dimensions; i++)
                 weightedSum[i] += weight * vec[i];
 
             hasSignal = true;
         }
 
-        if (!hasSignal)
-            return UpdateNewsProfileResult.NoData;
-
-        var signal = Normalize(weightedSum);
-        if (signal is null)
-            return UpdateNewsProfileResult.NoData;  // all weights cancelled to zero
-
-        // Blend: new = normalize(alpha * current + (1 - alpha) * signal)
-        var currentVec = profile.LongTermEmbedding.ToArray();
-        var blended = new double[dimensions];
-        for (var i = 0; i < dimensions; i++)
-            blended[i] = Alpha * currentVec[i] + (1.0 - Alpha) * signal[i];
-
-        var result = Normalize(blended);
-        if (result is null)
-            return UpdateNewsProfileResult.Error;
-
-        profile.LongTermEmbedding = new Vector(result.Select(d => (float)d).ToArray());
-        profile.UpdatedAt = DateTimeOffset.UtcNow;
-
-        await profiles.UpsertAsync(profile, cancellationToken).ConfigureAwait(false);
-        return UpdateNewsProfileResult.Updated;
+        return hasSignal ? Normalize(weightedSum) : null;
     }
 
     private static double ComputeWeight(NewsInteraction interaction, double avgDwell)

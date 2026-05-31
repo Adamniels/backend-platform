@@ -15,4 +15,12 @@ public sealed class NewsUserProfile
 
     public DateTimeOffset SeededAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>14-day behavioral snapshot, no momentum. Null until the first interaction window has data.</summary>
+    public Vector? ShortTermEmbedding { get; set; }
+    public DateTimeOffset? ShortTermUpdatedAt { get; set; }
+
+    /// <summary>Embedding of declared interests and active projects. Null until first active context update.</summary>
+    public Vector? ActiveContextEmbedding { get; set; }
+    public DateTimeOffset? ActiveContextUpdatedAt { get; set; }
 }
