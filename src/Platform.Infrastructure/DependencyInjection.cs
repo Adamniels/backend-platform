@@ -81,7 +81,10 @@ public static class DependencyInjection
         services.AddScoped<INewsInteractionRepository, EfNewsInteractionRepository>();
         services.AddScoped<INewsVectorSearch, NewsVectorSearch>();
         services.AddScoped<IUserInterestProvider, ExplicitProfileUserInterestProvider>();
+        services.AddScoped<INewsRankedFeedRepository, EfNewsRankedFeedRepository>();
         services.AddScoped<Platform.Application.Features.News.Profile.UpdateNewsActiveContextCommandHandler>();
+        services.AddScoped<Platform.Application.Features.News.RankedFeed.StoreRankedNewsFeedCommandHandler>();
+        services.AddScoped<Platform.Application.Features.News.RankedFeed.GetNewsFeedCandidatesQueryHandler>();
         services.AddScoped<ISideLearningSessionRepository, SideLearningSessionRepository>();
         services.AddScoped<ISavedItemsReadRepository, SavedItemsReadRepository>();
         services.AddScoped<IHumanInputReadRepository, HumanInputReadRepository>();

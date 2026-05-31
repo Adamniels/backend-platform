@@ -20,6 +20,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
     public DbSet<NewsItemEmbedding> NewsItemEmbeddings => Set<NewsItemEmbedding>();
     public DbSet<NewsUserProfile> NewsUserProfiles => Set<NewsUserProfile>();
     public DbSet<NewsInteraction> NewsInteractions => Set<NewsInteraction>();
+    public DbSet<NewsRankedFeed> NewsRankedFeeds => Set<NewsRankedFeed>();
     public DbSet<SideLearningSession> SideLearningSessions => Set<SideLearningSession>();
     public DbSet<SavedItem> SavedItems => Set<SavedItem>();
     public DbSet<MemoryInsight> MemoryInsights => Set<MemoryInsight>();
@@ -170,6 +171,14 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.ActiveContextEmbedding)
                 .HasColumnType("vector(1536)")
                 .IsRequired(false);
+        });
+
+        modelBuilder.Entity<NewsRankedFeed>(e =>
+        {
+            e.ToTable("news_ranked_feeds");
+            e.HasKey(x => x.UserId);
+            e.Property(x => x.EntriesJson).HasColumnType("jsonb");
+            e.Property(x => x.ModelUsed).HasMaxLength(128);
         });
 
         modelBuilder.Entity<NewsInteraction>(e =>

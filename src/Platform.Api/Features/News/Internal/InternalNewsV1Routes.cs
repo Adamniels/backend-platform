@@ -2,6 +2,7 @@ using Platform.Application.Features.News;
 using Platform.Application.Features.News.Embed;
 using Platform.Application.Features.News.Ingest;
 using Platform.Application.Features.News.Profile;
+using Platform.Application.Features.News.RankedFeed;
 using Platform.Application.Features.WorkflowRuns.StartWorkflowRun;
 using Platform.Contracts.V1.News;
 
@@ -114,6 +115,37 @@ public static class InternalNewsV1Routes
                         _                                 => "error",
                     };
                     return Results.Ok(new UpdateNewsProfileV1Response(status));
+                })
+            .DisableAntiforgery();
+
+        group.MapGet(
+                "feed/candidates",
+                async (
+                    int userId,
+                    int limit,
+                    GetNewsFeedCandidatesQueryHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var result = await handler
+                        .HandleAsync(new GetNewsFeedCandidatesQuery(userId, limit > 0 ? limit : 50), ct)
+                        .ConfigureAwait(false);
+                    return Results.Ok(result);
+                })
+            .DisableAntiforgery();
+
+        group.MapPost(
+                "feed/ranked-results",
+                async (
+                    StoreRankedResultsV1Request body,
+                    StoreRankedNewsFeedCommandHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var entries = body.Rankings
+                        .Select(r => new RankedFeedEntry(r.NewsItemId, r.Score, r.Explanation))
+                        .ToList();
+                    var cmd = new StoreRankedNewsFeedCommand(body.UserId, body.ModelUsed, entries);
+                    await handler.HandleAsync(cmd, ct).ConfigureAwait(false);
+                    return Results.NoContent();
                 })
             .DisableAntiforgery();
 

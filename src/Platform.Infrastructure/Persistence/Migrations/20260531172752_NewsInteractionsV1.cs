@@ -49,8 +49,7 @@ namespace Platform.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "news_interactions");
+            migrationBuilder.DropTable(name: "news_interactions");
         }
     }
 }

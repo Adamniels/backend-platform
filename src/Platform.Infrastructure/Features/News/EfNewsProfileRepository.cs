@@ -26,9 +26,14 @@ public sealed class EfNewsProfileRepository(PlatformDbContext db) : INewsProfile
 
         if (existing is not null)
         {
-            existing.LongTermEmbedding = profile.LongTermEmbedding;
-            existing.SeedText = profile.SeedText;
-            existing.UpdatedAt = profile.UpdatedAt;
+            existing.LongTermEmbedding      = profile.LongTermEmbedding;
+            existing.SeedText               = profile.SeedText;
+            existing.UpdatedAt              = profile.UpdatedAt;
+            // Phase 4 fields — nullable, only copy when the caller has set them.
+            existing.ShortTermEmbedding     = profile.ShortTermEmbedding;
+            existing.ShortTermUpdatedAt     = profile.ShortTermUpdatedAt;
+            existing.ActiveContextEmbedding = profile.ActiveContextEmbedding;
+            existing.ActiveContextUpdatedAt = profile.ActiveContextUpdatedAt;
         }
         else
         {

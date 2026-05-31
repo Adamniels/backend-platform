@@ -7,4 +7,5 @@ public sealed record NewsItemSummaryDto(
     string PublishedAt,
     string? Url,
     string? Body,
-    double? RelevanceScore);
+    double? RelevanceScore,
+    string? RelevanceExplanation = null);
