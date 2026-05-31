@@ -1,3 +1,4 @@
+using Platform.Application.Abstractions.News;
 using Platform.Application.Features.News;
 using Platform.Application.Features.News.Embed;
 using Platform.Application.Features.News.Ingest;
@@ -167,6 +168,35 @@ public static class InternalNewsV1Routes
                         _                                       => "error",
                     };
                     return Results.Ok(new UpdateNewsActiveContextV1Response(status));
+                })
+            .DisableAntiforgery();
+
+        // ── Article summarisation ─────────────────────────────────────────────
+
+        group.MapGet(
+                "items/{id}/body",
+                async (
+                    string id,
+                    INewsReadRepository newsRepo,
+                    CancellationToken ct) =>
+                {
+                    var result = await newsRepo.GetTitleAndBodyAsync(id, ct).ConfigureAwait(false);
+                    return result is null
+                        ? Results.NotFound()
+                        : Results.Ok(new { title = result.Value.Title, body = result.Value.Body });
+                })
+            .DisableAntiforgery();
+
+        group.MapPost(
+                "items/{id}/summary",
+                async (
+                    string id,
+                    StoreSummaryV1Request body,
+                    INewsReadRepository newsRepo,
+                    CancellationToken ct) =>
+                {
+                    await newsRepo.StoreSummaryAsync(id, body.SummaryMarkdown, ct).ConfigureAwait(false);
+                    return Results.NoContent();
                 })
             .DisableAntiforgery();
     }

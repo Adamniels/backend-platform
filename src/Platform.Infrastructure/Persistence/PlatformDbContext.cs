@@ -82,6 +82,7 @@ public sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> option
             e.Property(x => x.Url).HasMaxLength(4096);
             e.Property(x => x.UrlHash).HasMaxLength(64);
             e.Property(x => x.Body).HasColumnType("text");
+            e.Property(x => x.SummaryBody).HasColumnType("text").IsRequired(false);
             e.Property(x => x.Author).HasMaxLength(512);
             e.Property(x => x.SourceFeedUrl).HasMaxLength(2048);
             e.HasIndex(x => x.UrlHash).IsUnique();

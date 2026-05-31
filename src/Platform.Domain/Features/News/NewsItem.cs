@@ -12,4 +12,7 @@ public sealed class NewsItem
     public string Body { get; set; } = "";
     public string? Author { get; set; }
     public string? SourceFeedUrl { get; set; }
+
+    /// <summary>Claude Haiku-generated Markdown summary. Null until the summarise activity has run.</summary>
+    public string? SummaryBody { get; set; }
 }

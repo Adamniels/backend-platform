@@ -17,7 +17,8 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
                 x.Source,
                 x.PublishedAt.ToString("O"),
                 string.IsNullOrEmpty(x.Url) ? null : x.Url,
-                string.IsNullOrEmpty(x.Body) ? null : x.Body,
+                // Prefer the Markdown summary; fall back to raw body.
+                string.IsNullOrEmpty(x.SummaryBody) ? (string.IsNullOrEmpty(x.Body) ? null : x.Body) : x.SummaryBody,
                 null))
             .ToListAsync(cancellationToken);
 
@@ -27,6 +28,32 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
             .Select(x => x.Body)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
+
+    public async Task<(string Title, string Body)?> GetTitleAndBodyAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        var item = await db.NewsItems.AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => new { x.Title, x.Body })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return item is null ? null : (item.Title, item.Body);
+    }
+
+    public async Task StoreSummaryAsync(
+        string id,
+        string summaryMarkdown,
+        CancellationToken cancellationToken = default)
+    {
+        await db.NewsItems
+            .Where(x => x.Id == id)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(x => x.SummaryBody, summaryMarkdown),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
 
     public async Task<IReadOnlyList<NewsItemSummaryDto>> GetByIdsAsync(
         IEnumerable<string> ids,
@@ -41,7 +68,8 @@ public sealed class NewsReadRepository(PlatformDbContext db) : INewsReadReposito
                 x.Source,
                 x.PublishedAt.ToString("O"),
                 string.IsNullOrEmpty(x.Url) ? null : x.Url,
-                string.IsNullOrEmpty(x.Body) ? null : x.Body,
+                // Prefer the Markdown summary; fall back to raw body.
+                string.IsNullOrEmpty(x.SummaryBody) ? (string.IsNullOrEmpty(x.Body) ? null : x.Body) : x.SummaryBody,
                 null))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
